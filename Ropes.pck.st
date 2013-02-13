@@ -1,9 +1,9 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1590] on 11 February 2013 at 7:23:51 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1590] on 12 February 2013 at 7:03 pm'!
 'Description Please enter a description for this package '!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
 	instanceVariableNames: ''
-	classVariableNames: ''
+	classVariableNames: 'Fibonacci MaxRopeDepth'
 	poolDictionaries: ''
 	category: 'Ropes'!
 !classDefinition: 'Rope class' category: #Ropes!
@@ -12,8 +12,8 @@ Rope class
 
 !classDefinition: #ConcatRope category: #Ropes!
 Rope subclass: #ConcatRope
-	instanceVariableNames: 'leftLength totalLength leftRope rightRope'
-	classVariableNames: ''
+	instanceVariableNames: 'depth totalLength leftRope rightRope'
+	classVariableNames: 'MeldThreshold'
 	poolDictionaries: ''
 	category: 'Ropes'!
 !classDefinition: 'ConcatRope class' category: #Ropes!
@@ -32,7 +32,7 @@ FlatRope class
 
 !classDefinition: #RopeTest category: #Ropes!
 TestCase subclass: #RopeTest
-	instanceVariableNames: 'flatRope subRope concRope1 concRope2 concRope3'
+	instanceVariableNames: 'flatRope longFlat shortFlat subRope concRope1 concRope2 concRope3'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Ropes'!
@@ -80,23 +80,35 @@ asRope
 
 	^self asString asRope! !
 
-!ConcatRope methodsFor: 'accessing' stamp: 'KenD 2/9/2013 19:38'!
+!ConcatRope methodsFor: 'accessing' stamp: 'KenD 2/12/2013 14:05'!
 at: anIndex
 
-	(anIndex <= self leftLength)
-	ifTrue: [^leftRope at: anIndex]
+	| leftLength |
+	leftLength := self leftRope size.
+	(anIndex <= leftLength)
+	ifTrue:  [^leftRope  at: anIndex]
 	ifFalse: [^rightRope at: (anIndex - leftLength)]! !
 
-!ConcatRope methodsFor: 'accessing' stamp: 'KenD 2/10/2013 19:35'!
+!ConcatRope methodsFor: 'accessing' stamp: 'KenD 2/12/2013 14:02'!
 at: index put: aCharacter 
 
 	"Answer a new rope"
-	(index <= self leftLength)
+	| leftLength |
+	leftLength := self leftRope size.
+	(index <= leftLength)
 	ifTrue: [ ^ (self leftRope at: index put: aCharacter) , self rightRope]
 	ifFalse: [ ^ self leftRope ,
-		          (self rightRope at: (index - self leftLength) put: aCharacter)]! !
+		          (self rightRope at: (index - leftLength) put: aCharacter)]! !
 
-!ConcatRope methodsFor: 'copying' stamp: 'KenD 2/11/2013 17:12'!
+!ConcatRope methodsFor: 'private' stamp: 'KenD 2/12/2013 18:50'!
+balanceAsRequired
+	"Rebalance as required"
+
+	(self depth > Rope maxRopeDepth)
+	ifTrue:  [ ^ self rebalance ]
+	ifFalse: [ ^ self ]! !
+
+!ConcatRope methodsFor: 'copying' stamp: 'KenD 2/12/2013 14:04'!
 copyFrom: start to: stop 
 	"Answer a Rope."
 	
@@ -111,7 +123,7 @@ copyFrom: start to: stop
 		ifFalse: [self errorSubscriptBounds: start]
 	].
 
-	leftMaxIndex := self leftLength.
+	leftMaxIndex := self leftRope size.
 	
 	"Contained in left rope?"
 	(stop <= leftMaxIndex)
@@ -128,21 +140,21 @@ copyFrom: start to: stop
 
 ! !
 
-!ConcatRope methodsFor: 'private' stamp: 'KenD 2/8/2013 16:58'!
-leftLength
+!ConcatRope methodsFor: 'private' stamp: 'KenD 2/12/2013 14:21'!
+depth
 	
-	^leftLength! !
+	^depth! !
 
 !ConcatRope methodsFor: 'private' stamp: 'KenD 2/8/2013 16:58'!
 leftRope
 	
 	^leftRope! !
 
-!ConcatRope methodsFor: 'private' stamp: 'KenD 2/10/2013 15:48'!
+!ConcatRope methodsFor: 'private' stamp: 'KenD 2/12/2013 15:28'!
 meldThreshold
 
 	"Answer combined size below which we should meld short strings together"
-	^ 10! !
+	^ ConcatRope meldThreshold ! !
 
 !ConcatRope methodsFor: 'private' stamp: 'KenD 2/8/2013 16:59'!
 rightRope
@@ -154,20 +166,38 @@ size
 
 	^totalLength! !
 
-!ConcatRope methodsFor: 'initialize-release' stamp: 'KenD 2/10/2013 15:45'!
+!ConcatRope methodsFor: 'initialize-release' stamp: 'KenD 2/12/2013 19:02'!
 withLeft: aRope andRight: anotherRope
 
 	leftRope := aRope asRope.
-	leftLength := aRope size.
 	rightRope := anotherRope asRope.
-	totalLength := leftLength + anotherRope size.
+	totalLength := aRope size + anotherRope size.
 	
-	(totalLength < (self meldThreshold))
-	"@@FIXME: optimize the meld case @@"
-	ifTrue: [ ^ FlatRope fromString: ((aRope asString) , (anotherRope asString))]
-	ifFalse: [ ^self ]! !
+	"Common special cases to optimize"
+	
+	"Meld two short flat ropes"
+	(totalLength < ConcatRope meldThreshold )
+	ifTrue: [ ^ FlatRope fromString: ((aRope asString) , (anotherRope asString))]. "'FIXME: optimize"
+	
+	"If left rope has short right child and right rope is short, meld them"
+	((leftRope class == ConcatRope)
+		and: [ ((leftRope rightRope size) + rightRope size) 
+			 < ConcatRope meldThreshold  ])
+	ifTrue: [
+		^((ConcatRope
+			concatenate: (leftRope leftRope) "LeftRope's left child"
+			with: (FlatRope fromString: ((leftRope rightRope asString) , 
+										(rightRope asString)))  "'FIXME: optimize"
+			) balanceAsRequired)
+	].
 
-!ConcatRope class methodsFor: 'instance creation' stamp: 'KenD 2/10/2013 15:44'!
+	"The General Case"
+	
+	"depth is not defined for Strings; be sure to use Ropes"
+	depth := 1 + (leftRope depth max: (rightRope depth)).
+	^(self balanceAsRequired)! !
+
+!ConcatRope class methodsFor: 'instance creation' stamp: 'KenD 2/12/2013 15:29'!
 concatenate: aRope with: otherRope
 	"Answer a new ConcatRope"
 
@@ -179,7 +209,21 @@ concatenate: aRope with: otherRope
 		ifTrue: [^aRope asRope].
 
 	"Non-trivial. Answer a new instance"	
-	^(self new initialize withLeft: aRope andRight: otherRope)! !
+	^(self new initialize withLeft: aRope andRight: otherRope) "NB: may return a FlatRope"! !
+
+!ConcatRope class methodsFor: 'class initialization' stamp: 'KenD 2/12/2013 15:28'!
+initialize
+	"ConcatRope class initialization"
+"
+	ConcatRope initialize.
+"
+	MeldThreshold := 17.! !
+
+!ConcatRope class methodsFor: 'accessing' stamp: 'KenD 2/12/2013 15:27'!
+meldThreshold
+	"Concatenating short ropes (combined lenth < meldThreshold) get melded (joined) together"
+
+	^MeldThreshold ! !
 
 !FlatRope methodsFor: 'accessing' stamp: 'KenD 2/8/2013 16:45'!
 at: anIndex
@@ -227,6 +271,12 @@ copyFrom: start to: stop
 		ifTrue: [self errorSubscriptBounds: stop]
 		ifFalse: [self errorSubscriptBounds: start]
 	]! !
+
+!FlatRope methodsFor: 'private' stamp: 'KenD 2/12/2013 14:22'!
+depth
+	"I am a leaf"
+	
+	^0! !
 
 !FlatRope methodsFor: 'accessing' stamp: 'KenD 2/8/2013 16:53'!
 size
@@ -301,6 +351,16 @@ first
 	"Answer first index -- like Text"
 	^1! !
 
+!Rope methodsFor: 'private' stamp: 'KenD 2/12/2013 17:14'!
+isBalanced
+	"Answer if the Rope is balanced"
+
+	| fib |
+	fib := Rope fibonacci.
+	(self depth >= (fib size - 2))
+	ifTrue:  [^false]
+	ifFalse: [^ (fib at: (self depth + 2)) <= self size]! !
+
 !Rope methodsFor: 'accessing' stamp: 'KenD 2/11/2013 18:30'!
 last
 	"Answer last index -- like Text"
@@ -321,10 +381,75 @@ printString
 
 	^String streamContents: [:s | self printOn: s]! !
 
+!Rope methodsFor: 'private' stamp: 'KenD 2/12/2013 18:36'!
+rebalance
+	"Answer a new balanced rope with my data"
+
+	| leafNodes toExamine |
+	leafNodes  := OrderedCollection new.
+	toExamine := OrderedCollection new.
+	toExamine addLast: self.
+	"depth first"
+	(toExamine size > 0) whileTrue: [
+		| node |
+		node := toExamine removeFirst.
+		(node class == ConcatRope)
+		ifTrue: [
+			toExamine addLast: node rightRope.
+			toExamine addLast: node leftRope
+		]
+		ifFalse: [leafNodes addLast: node]
+	].
+	^ Rope merge: leafNodes start: 0 end: (leafNodes size).! !
+
 !Rope methodsFor: 'printing' stamp: 'KenD 2/9/2013 19:36'!
 stringRepresentation
 
 	^String streamContents: [:s | self do: [ :char | s nextPut: char]]! !
+
+!Rope class methodsFor: 'user interface' stamp: 'KenD 2/12/2013 17:08'!
+fibonacci
+
+"
+	self fibonacci size.
+"
+	^Fibonacci ! !
+
+!Rope class methodsFor: 'class initialization' stamp: 'KenD 2/12/2013 18:32'!
+initialize
+"
+	Rope initialize.
+"
+	Fibonacci :=   #( 0  1  1  2  3  5  8  13  21  34  55  89  144  233  377  610  987  1597  2584  4181  6765  10946  17711  28657  46368  75025  121393  196418  317811  514229  832040  1346269  2178309  3524578  5702887  9227465  14930352  24157817  39088169  63245986  102334155  165580141  267914296  433494437  701408733  1134903170  1836311903  2971215073  4807526976  7778742049  12586269025  20365011074  32951280099  53316291173  86267571272  139583862445  225851433717  365435296162  591286729879  956722026041  1548008755920  2504730781961  4052739537881  6557470319842  10610209857723  17167680177565  27777890035288  44945570212853  72723460248141  117669030460994  190392490709135  308061521170129  498454011879264  806515533049393  1304969544928657  2111485077978050  3416454622906707  5527939700884757  8944394323791464  14472334024676221  23416728348467685  37889062373143906  61305790721611591  99194853094755497  160500643816367088  259695496911122585  420196140727489673  679891637638612258  1100087778366101931  1779979416004714189  2880067194370816120  4660046610375530309  7540113804746346429 ).
+	
+	MaxRopeDepth := 96.  "rebalance ropes whose dwpth exceeds this"! !
+
+!Rope class methodsFor: 'user interface' stamp: 'KenD 2/12/2013 18:33'!
+maxRopeDepth
+	"Rebalance a Rope when its depth exceeds this."
+"
+	self fibonacci size.
+"
+	^MaxRopeDepth ! !
+
+!Rope class methodsFor: 'private' stamp: 'KenD 2/12/2013 18:28'!
+merge: leafNodes start: start end: end
+	"Answer a balanced rope based on data from Rope\>>rebalance"
+
+	| range middle |
+	range := end - start.
+	
+	(range = 1)
+	ifTrue: [^ leafNodes at: start].
+	
+	(range = 2)
+	ifTrue: [^ (leafNodes at: start) , (leafNodes at: (start + 1)) ].
+	
+	middle := start + (range // 2).
+	
+	^ (self merge: leafNodes start: start end: middle ) ,
+	   (self merge: leafNodes start: middle end: end)
+	! !
 
 !Rope class methodsFor: 'user interface' stamp: 'KenD 2/11/2013 19:22'!
 openTextEditor
@@ -338,7 +463,7 @@ openTextEditor
 			label: 'Text Editor' 
 			wrap: true! !
 
-!RopeTest methodsFor: 'testing' stamp: 'KenD 2/10/2013 14:47'!
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/12/2013 15:17'!
 setUp
 
 	"Set up class variables (before each test)."
@@ -351,7 +476,8 @@ setUp
 	concRope1 := ConcatRope concatenate: subRope with: (' new string tail' asRope).
 	concRope2 := ConcatRope concatenate: concRope1 with:concRope1.
 	concRope3 := ConcatRope concatenate: ('Now is the time ' asRope) with: subRope.
- ! !
+	longFlat  := FlatRope fromString: '123456789012345678901234567890'. "long"
+	shortFlat := FlatRope fromString: 'short'. "short"! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/10/2013 14:45'!
 testAccess
@@ -365,6 +491,27 @@ testAccess
 	self assert: ((concRope2 at: (concRope1 size + 5)) = $5).
 	self assert: ((concRope3 at: 5) = $i).
 	self assert: ((concRope3 at: (16 + 5)) = $5).! !
+
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/12/2013 18:55'!
+testMeld
+	"Do we meld short ropes?"
+
+	self assert: ( (shortFlat , shortFlat) class == FlatRope ).
+	self deny: ( (longFlat , shortFlat) class == FlatRope ).
+	self deny: ( (shortFlat , longFlat) class == FlatRope ).
+	self deny: ( (longFlat , longFlat) class == FlatRope ).
+
+	self assert: ( (shortFlat , shortFlat) depth = 0).
+	self assert: ( (longFlat ,  shortFlat) depth = 1).
+	self assert: ( (shortFlat , longFlat)  depth = 1).
+	self assert: ( (longFlat ,  longFlat , longFlat) depth = 2 ).
+	self assert: ( (longFlat , shortFlat , longFlat) depth = 2 ).
+	self assert: ( (longFlat , shortFlat , shortFlat) depth = 1 ).
+	self assert: ( (shortFlat , longFlat ,  longFlat) depth = 2 ).
+	self assert: ( (shortFlat , shortFlat , longFlat) depth = 1 ).
+	self assert: ( (shortFlat , longFlat , shortFlat) depth = 2 ).
+	self assert: ( (shortFlat , shortFlat , shortFlat) depth = 0 ).
+! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/10/2013 19:40'!
 testMutation
@@ -508,6 +655,12 @@ copyFrom: start to: stop
 		ifFalse: [self errorSubscriptBounds: start]
 	]! !
 
+!SubRope methodsFor: 'private' stamp: 'KenD 2/12/2013 14:21'!
+depth
+	"I am a leaf"
+
+	^0! !
+
 !SubRope methodsFor: 'accessing' stamp: 'KenD 2/8/2013 19:30'!
 size
 	^length! !
@@ -538,3 +691,5 @@ string: aString startIndex: anIndex length: numberOfChars
 	ifTrue: [self errorSubscriptBounds: anIndex].
 	
 	^self! !
+ConcatRope initialize!
+Rope initialize!
