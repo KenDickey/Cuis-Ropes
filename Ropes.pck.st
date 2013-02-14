@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1590] on 12 February 2013 at 7:03 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1590] on 13 February 2013 at 4:00:29 pm'!
 'Description Please enter a description for this package '!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -381,7 +381,7 @@ printString
 
 	^String streamContents: [:s | self printOn: s]! !
 
-!Rope methodsFor: 'private' stamp: 'KenD 2/12/2013 18:36'!
+!Rope methodsFor: 'private' stamp: 'KenD 2/13/2013 15:49'!
 rebalance
 	"Answer a new balanced rope with my data"
 
@@ -390,7 +390,7 @@ rebalance
 	toExamine := OrderedCollection new.
 	toExamine addLast: self.
 	"depth first"
-	(toExamine size > 0) whileTrue: [
+	[toExamine size > 0] whileTrue: [
 		| node |
 		node := toExamine removeFirst.
 		(node class == ConcatRope)
@@ -400,7 +400,7 @@ rebalance
 		]
 		ifFalse: [leafNodes addLast: node]
 	].
-	^ Rope merge: leafNodes start: 0 end: (leafNodes size).! !
+	^ Rope merge: leafNodes start: 1 end: (leafNodes size).! !
 
 !Rope methodsFor: 'printing' stamp: 'KenD 2/9/2013 19:36'!
 stringRepresentation
@@ -552,6 +552,18 @@ testPrint
 				  'Rope(''abcd5678hijk new string tailabcd5678hijk new string tail'')' ).
 	self assert: ((concRope3 printString) =  'Rope(''Now is the time abcd5678hijk'')').
 ! !
+
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/13/2013 16:00'!
+testRebalance
+
+	| fr1 fr2 |
+	fr1 := FlatRope fromString: '12345678901234567890'.
+	fr2 := FlatRope fromString: 'abcdefghijklmnopqrstuvwxyz'.
+
+	self assert: ( (fr1, fr2, fr1, fr2, fr1, fr2, fr1, fr2) depth = 7 ).
+	self assert: ( (fr1, fr2, fr1, fr2, fr1, fr2, fr1, fr2) rebalance depth = 3 ).
+	self assert: ( (fr1, concRope1, fr2, concRope2, fr1, fr2, fr1, fr2, concRope3, fr1, fr2) depth = 11 ).
+	self assert: (  (fr1, concRope1, fr2, concRope2, fr1, fr2, fr1, fr2, concRope3, fr1, fr2)  rebalance depth = 4 ).! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/11/2013 18:50'!
 testSubstring
