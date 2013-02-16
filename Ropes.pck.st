@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1590] on 13 February 2013 at 4:00:29 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1590] on 15 February 2013 at 9:50:40 pm'!
 'Description Please enter a description for this package '!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -145,6 +145,14 @@ depth
 	
 	^depth! !
 
+!ConcatRope methodsFor: 'enumerating' stamp: 'KenD 2/15/2013 21:50'!
+do: aBlock
+	"aBlock takes each Character in me as an argument"
+
+	"recurse into the leaves, give them aBlock, and let them do the work"
+	self leftRope do: aBlock.
+	self rightRope do: aBlock.! !
+
 !ConcatRope methodsFor: 'private' stamp: 'KenD 2/8/2013 16:58'!
 leftRope
 	
@@ -277,6 +285,12 @@ depth
 	"I am a leaf"
 	
 	^0! !
+
+!FlatRope methodsFor: 'enumerating' stamp: 'KenD 2/15/2013 21:49'!
+do: aBlock
+	"aBlock takes each Character in me (my string) as an argument"
+
+	self theString do: aBlock! !
 
 !FlatRope methodsFor: 'accessing' stamp: 'KenD 2/8/2013 16:53'!
 size
@@ -553,17 +567,19 @@ testPrint
 	self assert: ((concRope3 printString) =  'Rope(''Now is the time abcd5678hijk'')').
 ! !
 
-!RopeTest methodsFor: 'testing' stamp: 'KenD 2/13/2013 16:00'!
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/15/2013 21:05'!
 testRebalance
 
-	| fr1 fr2 |
+	| fr1 fr2 t1 t2 |
 	fr1 := FlatRope fromString: '12345678901234567890'.
 	fr2 := FlatRope fromString: 'abcdefghijklmnopqrstuvwxyz'.
+	t1 := (fr1, fr2, fr1, fr2, fr1, fr2, fr1, fr2).
+	t2 := (fr1, concRope1, fr2, concRope2, fr1, fr2, fr1, fr2, concRope3, fr1, fr2).
 
-	self assert: ( (fr1, fr2, fr1, fr2, fr1, fr2, fr1, fr2) depth = 7 ).
-	self assert: ( (fr1, fr2, fr1, fr2, fr1, fr2, fr1, fr2) rebalance depth = 3 ).
-	self assert: ( (fr1, concRope1, fr2, concRope2, fr1, fr2, fr1, fr2, concRope3, fr1, fr2) depth = 11 ).
-	self assert: (  (fr1, concRope1, fr2, concRope2, fr1, fr2, fr1, fr2, concRope3, fr1, fr2)  rebalance depth = 4 ).! !
+	self assert: ( t1 depth = 7 ).
+	self assert: ( t1 rebalance depth = 3 ).
+	self assert: ( t2 depth = 11 ).
+	self assert: ( t2 rebalance depth = 4 ).! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/11/2013 18:50'!
 testSubstring
@@ -672,6 +688,16 @@ depth
 	"I am a leaf"
 
 	^0! !
+
+!SubRope methodsFor: 'enumerating' stamp: 'KenD 2/15/2013 21:46'!
+do: aBlock
+	"aBlock takes each Character in me as an argument"
+
+	| start end string |
+	start := self startIndex.
+	end := start + self size - 1.
+	string := self string.
+	start to: end do: [ :index |  aBlock value: (string at: index) ]! !
 
 !SubRope methodsFor: 'accessing' stamp: 'KenD 2/8/2013 19:30'!
 size
