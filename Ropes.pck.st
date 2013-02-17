@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1590] on 15 February 2013 at 9:50:40 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1590] on 16 February 2013 at 4:13:27 pm'!
 'Description Please enter a description for this package '!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -66,7 +66,25 @@ Multithreaded sharing of ropes needs no locking.
 
 See:
 	https://en.wikipedia.org/wiki/Rope_%28computer_science%29
-!
+
+Ropes offers better performance than strings for common operations, and generally reduce memory allocations and copies, while only entailing a small degradation of less common operations.
+
+Where a string is represented in memory by an array of character values, a rope is a tree structure whose leaves are slices of immutable strings. Therefore, concatenation, appending, prepending, substrings, etc. are operations that require only trivial tree manipulation, generally without having to copy memory. In addition, the tree structure of ropes makes them suitable as a form of index to speed-up access to Unicode characters by index in long chunks of text.
+
+The following operations are algorithmically faster in ropes:
+
+    - extracting a subrope is logarithmic (linear in strings);
+    - appending/prepending is near-constant time (linear in strings);
+    - concatenation is near-constant time (linear in strings);
+    - char length is constant-time (linear in strings);
+
+    - access to a character by index is logarithmic (linear in strings);
+
+Note:
+	Character>>asRope
+	String>>asRope
+	Rope class>>fromString
+	!
 
 !RopeTest commentStamp: '<historical>' prior: 0!
 Test Cases for Ropes!
@@ -421,7 +439,7 @@ stringRepresentation
 
 	^String streamContents: [:s | self do: [ :char | s nextPut: char]]! !
 
-!Rope class methodsFor: 'user interface' stamp: 'KenD 2/12/2013 17:08'!
+!Rope class methodsFor: 'private' stamp: 'KenD 2/12/2013 17:08'!
 fibonacci
 
 "
@@ -429,16 +447,22 @@ fibonacci
 "
 	^Fibonacci ! !
 
-!Rope class methodsFor: 'class initialization' stamp: 'KenD 2/12/2013 18:32'!
+!Rope class methodsFor: 'instance creation' stamp: 'KenD 2/16/2013 14:46'!
+fromString: aString
+	"Answer a new rope"
+
+	^FlatRope fromString: aString! !
+
+!Rope class methodsFor: 'class initialization' stamp: 'KenD 2/16/2013 14:47'!
 initialize
 "
 	Rope initialize.
 "
 	Fibonacci :=   #( 0  1  1  2  3  5  8  13  21  34  55  89  144  233  377  610  987  1597  2584  4181  6765  10946  17711  28657  46368  75025  121393  196418  317811  514229  832040  1346269  2178309  3524578  5702887  9227465  14930352  24157817  39088169  63245986  102334155  165580141  267914296  433494437  701408733  1134903170  1836311903  2971215073  4807526976  7778742049  12586269025  20365011074  32951280099  53316291173  86267571272  139583862445  225851433717  365435296162  591286729879  956722026041  1548008755920  2504730781961  4052739537881  6557470319842  10610209857723  17167680177565  27777890035288  44945570212853  72723460248141  117669030460994  190392490709135  308061521170129  498454011879264  806515533049393  1304969544928657  2111485077978050  3416454622906707  5527939700884757  8944394323791464  14472334024676221  23416728348467685  37889062373143906  61305790721611591  99194853094755497  160500643816367088  259695496911122585  420196140727489673  679891637638612258  1100087778366101931  1779979416004714189  2880067194370816120  4660046610375530309  7540113804746346429 ).
 	
-	MaxRopeDepth := 96.  "rebalance ropes whose dwpth exceeds this"! !
+	MaxRopeDepth := 96.  "rebalance ropes whose depth exceeds this"! !
 
-!Rope class methodsFor: 'user interface' stamp: 'KenD 2/12/2013 18:33'!
+!Rope class methodsFor: 'private' stamp: 'KenD 2/12/2013 18:33'!
 maxRopeDepth
 	"Rebalance a Rope when its depth exceeds this."
 "
