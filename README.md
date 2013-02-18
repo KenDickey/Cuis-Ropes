@@ -1,9 +1,12 @@
 Cuis-Ropes
 ==========
 
-Functional strings for Cuis
+### Aim 
 
-This is an experiment to see if we could use functional strings.
+This is an experiment to see if we could use functional strings in Cuis Smalltalk.
+
+
+### Functional strings for Cuis
 
 Ropes are a high-level representation of text that offers much better performance than strings for common operations, and generally reduce memory allocations and copies, while only entailing a small degradation of less common operations.
 
@@ -21,6 +24,9 @@ delegates the message to a its stringRepresentation.
 
 In the text editor, this is #encompassParagraph .
 
+
+### Installation
+
 To load the package
 
 
@@ -31,6 +37,20 @@ To load the package
             '..', slash, 'Cuis-Ropes', slash, 'Ropes.pck.st'
         )
 
-Then execute
+
+### Example application		
+
+To see how a text editor copes with Rope execute
 
     Rope openTextEditor.
+	
+	
+### References
+
+- http://en.wikipedia.org/wiki/Rope
+- A Python implementation which uses Ropes http://morepypy.blogspot.com/2007/11/ropes-branch-merged.html
+- IBM Java Ropes performance report http://www.ibm.com/developerworks/java/library/j-ropes/index.html	
+- 'Ropes: an Alternative to Strings' http://citeseer.ist.psu.edu/viewdoc/downloaddoi=10.1.1.14.9450&rep=rep1&type=pdf
+  The optimizations suggested in this paper have been implemented, but more optimizations could be done.
+- The Mozilla Rust language uses Ropes http://static.rust-lang.org/doc/0.5/std/rope.html ; 
+  Ropes API http://static.rust-lang.org/doc/0.5/std/rope.html#type-rope

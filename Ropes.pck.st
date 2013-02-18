@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1590] on 16 February 2013 at 4:13:27 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1590] on 18 February 2013 at 9:23:26 am'!
 'Description Please enter a description for this package '!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -529,6 +529,82 @@ testAccess
 	self assert: ((concRope2 at: (concRope1 size + 5)) = $5).
 	self assert: ((concRope3 at: 5) = $i).
 	self assert: ((concRope3 at: (16 + 5)) = $5).! !
+
+!RopeTest methodsFor: 'performance' stamp: 'hjh 2/17/2013 22:35'!
+testConcatTime
+	"self new testConcatTime"
+
+	| r r2 result africanProverb interpretation |
+	africanProverb :=  'A hundred pieces of elephant (reed) grass cannot cause the one fetching water to fall down on the way.'.
+	interpretation := 'If you are serious about doing something, nothing can prevent you from doing it.'.
+	
+	r := Rope fromString: africanProverb.
+	r2 := Rope fromString: interpretation.
+	
+	Transcript newLine.
+	Transcript show: 'concat time for Ropes: ',  [500000 timesRepeat: [ result := r2, r]] timeToRun asString, 'ms'.
+	Transcript newLine.
+	
+	Transcript show: 'concat time for Strings: ',  
+					[500000 timesRepeat: [ result := interpretation, africanProverb]] timeToRun asString, 'ms'.
+	Transcript newLine.
+	
+	
+	africanProverb :=  'A hundred pieces of elephant (reed) grass cannot cause the one fetching water to fall down on the way.'.
+	interpretation := 'If you are serious about doing something, nothing can prevent you from doing it.'.
+	
+	
+	r := Rope fromString: africanProverb.
+	r2 := Rope fromString: interpretation.
+	
+	
+	result := Rope fromString: ''.
+	Transcript show: 'concat time for Ropes: ',  [1000 timesRepeat: [ result := r2, r, result]] timeToRun asString, 'ms'.
+	Transcript newLine.
+	
+	result := ''.
+	Transcript show: 'concat time for Strings: ',  
+			[1000 timesRepeat: [ result := interpretation, africanProverb, result]] timeToRun asString, 'ms'.
+	Transcript newLine.
+	
+	
+	
+	! !
+
+!RopeTest methodsFor: 'performance' stamp: 'hjh 2/18/2013 09:21'!
+testIterationTime
+	"self new testIterationTime"
+
+	| r r2 ropeTest stringTest africanProverb interpretation ropeResult stringResult ir is|
+	africanProverb :=  'A hundred pieces of elephant (reed) grass cannot cause the one fetching water to fall down on the way.'.
+	interpretation := 'If you are serious about doing something, nothing can prevent you from doing it.'.
+	
+	r := Rope fromString: africanProverb.
+	r2 := Rope fromString: interpretation.
+	
+	Transcript newLine.
+	ropeResult := 'concat time for Ropes: ',  
+		[500000 timesRepeat: [ ropeTest := r2, r]] timeToRun asString, 'ms', String newLineString.
+		ropeResult	:=	ropeResult, '  time for #do: loop: ',
+		[ ir:=0. ropeTest do: [ :ch | ir := ir + 1. 10000 timesRepeat: [ir=ir "busy waiting"]]] 
+			timeToRun asString, 'ms'.
+	Transcript show: ropeResult. Transcript newLine.
+	
+
+	stringResult	:=	'concat time for Strings: ',
+	    [500000 timesRepeat: [ stringTest := interpretation, africanProverb]] timeToRun asString, 'ms',
+	             String newLineString.
+	    stringResult	:=	stringResult, '  time for #do: loop: ',
+		[ is:=0. stringTest do: [ :ch | is := is + 1. 10000 timesRepeat: [is=is "busy waiting"]]] 
+		timeToRun asString, 'ms'.
+	Transcript show: stringResult. Transcript newLine.
+	
+	self assert: is = ir. "the end indices of the string and the rope must be equal"
+	
+	
+	
+	
+! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/12/2013 18:55'!
 testMeld
