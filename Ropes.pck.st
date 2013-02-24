@@ -1,9 +1,9 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1610] on 22 February 2013 at 10:30:15 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1610] on 23 February 2013 at 8:50:20 pm'!
 'Description Ropes: functional, immutable strings'!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
 	instanceVariableNames: ''
-	classVariableNames: 'Fibonacci MaxRopeDepth'
+	classVariableNames: 'EmptyRope Fibonacci MaxRopeDepth'
 	poolDictionaries: ''
 	category: 'Ropes'!
 !classDefinition: 'Rope class' category: #Ropes!
@@ -105,6 +105,12 @@ Test cases for Ropes!
 !SubRope commentStamp: '<historical>' prior: 0!
 I refer to an immutable string shared with another Rope.!
 
+!Array methodsFor: '*ropes' stamp: 'KenD 2/23/2013 20:19'!
+asRope
+	"Elements must be characters. Answer a rope"
+
+	^ (String streamContents: [:s | self do: [ :elt | s nextPut: elt]]) asRope! !
+
 !Character methodsFor: '*ropes' stamp: 'KenD 2/9/2013 20:08'!
 asRope
 	"Answer self as a rope"
@@ -139,13 +145,13 @@ balanceAsRequired
 	ifTrue:  [ ^ self rebalance ]
 	ifFalse: [ ^ self ]! !
 
-!ConcatRope methodsFor: 'copying' stamp: 'KenD 2/12/2013 14:04'!
+!ConcatRope methodsFor: 'copying' stamp: 'KenD 2/23/2013 13:51'!
 copyFrom: start to: stop 
 	"Answer a Rope."
 	
 	| leftMaxIndex left right |
 	"Handle odd case the same way as OrderedCollection"
-	(stop < start) ifTrue: [^ FlatRope fromString: ''].
+	(stop < start) ifTrue: [^ Rope emptyString ].
 
 	((1 <= start) and: [stop <= self size])
 	ifFalse: [
@@ -290,12 +296,12 @@ at: index put: aCharacter
 	   aCharacter asRope ,
 	   (self copyFrom: (index + 1) to: (self size))! !
 
-!FlatRope methodsFor: 'copying' stamp: 'KenD 2/11/2013 17:12'!
+!FlatRope methodsFor: 'copying' stamp: 'KenD 2/23/2013 13:51'!
 copyFrom: start to: stop 
 	"Answer a Rope."
 
 	"Handle odd case the same way as OrderedCollection"
-	(stop < start) ifTrue: [^ FlatRope fromString: ''].
+	(stop < start) ifTrue: [^ Rope emptyString ].
 
 	((start = 1) and: (stop = self size))
 	ifTrue: [^self].
@@ -429,10 +435,10 @@ alike: aStringOrRope
 			whileTrue: [ j _ j - 1.  k _ k - 1. ].
 	^ i - 1 + self size - j + bonus. ! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:12'!
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 19:17'!
 asCamelCase
 	"Answer a new String, without any whitespace, and with words capitalized (Except for the first one)
-	' how do you do? ' asCamelCase
+	' how do you do? ' asRope asCamelCase
 	"
 	^ (String streamContents: [ :outStream | | inStream capitalize wroteSome |
 		wroteSome _ false.
@@ -485,7 +491,7 @@ asHex
 	self do: [ :ch | stream nextPutAll: ch hex ].
 	^stream contents asRope! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:10'!
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 19:34'!
 asIdentifier: shouldBeCapitalized
 	"Return a legal identifier, with first character in upper case if shouldBeCapitalized is true, else lower case.  This will always return a legal identifier, even for an empty string"
 
@@ -499,13 +505,13 @@ asIdentifier: shouldBeCapitalized
 			['a', aRope].
 	firstChar _ shouldBeCapitalized ifTrue: [aRope first asUppercase] ifFalse: [aRope first asLowercase].
 
-	^ firstChar asString, (aRope copyFrom: 2 to: aRope size)
+	^ firstChar asRope, (aRope copyFrom: 2 to: aRope size)
 "
-'234Fred987' asIdentifier: false
-'235Fred987' asIdentifier: true
-'' asIdentifier: true
-'()87234' asIdentifier: false
-'())z>=PPve889  U >' asIdentifier: false
+'234Fred987' asRope asIdentifier: false.  
+'235Fred987'  asRope asIdentifier: true
+''  asRope asIdentifier: true. 
+'()87234'  asRope asIdentifier: false. 
+'())z>=PPve889  U >'  asRope asIdentifier: false. 
 
 "! !
 
@@ -528,27 +534,28 @@ asInteger
 'abc234def567' asInteger
 "! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:14'!
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 19:40'!
 asLegalSelector
 	| toUse |
 	toUse _ ''.
 	self do:
-		[:char | char isGenerallyValidInIdentifiers ifTrue: [toUse _ toUse copyWith: char]].
+		[:char | char isGenerallyValidInIdentifiers ifTrue: [ toUse _ toUse copyWith: char]].
+		
 	(self size = 0 or: [self first isGenerallyValidStartOfInIdentifiers not])
-		ifTrue:		[toUse _ 'v', toUse].
+	ifTrue:	[ toUse _ 'v', toUse].
 
-	^ toUse withFirstCharacterDownshifted
+	^ (toUse withFirstCharacterDownshifted asRope)
 
 "
-'234znak 43 ) 2' asLegalSelector
+'234znak 43 ) 2' asRope asLegalSelector
 "! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:14'!
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 19:45'!
 asLowercase
 	"Answer a String made up from the receiver whose characters are all 
 	lowercase."
 
-	^ self copy asRope translateToLowercase! !
+	^ self translateWith: (String lowercasingTable)! !
 
 !Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:14'!
 asNumber 
@@ -686,12 +693,12 @@ asUnaccented
 		ifFalse: [ self ]
 		ifTrue: [ (self collect: [ :c | c asUnaccented ]) asRope]! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:30'!
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 19:44'!
 asUppercase
 	"Answer a String made up from the receiver whose characters are all 
 	uppercase."
 
-	^ (self asString translateToUppercase) asRope! !
+	^ self translateWith: (String uppercasingTable)! !
 
 !Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:30'!
 asUtf8
@@ -771,6 +778,16 @@ Copy the following and paste in your external text editor
 						evaluate: [ :byte | outStream nextPut: byte ]
 						withUtf8BytesOfUnicodeCodePoint: codePoint ]]]! !
 
+!Rope methodsFor: 'accessing' stamp: 'KenD 2/23/2013 13:39'!
+at: index
+
+	self subclassResponsibility ! !
+
+!Rope methodsFor: 'accessing' stamp: 'KenD 2/23/2013 13:40'!
+at: index put: aCharacter
+
+	self subclassResponsibility ! !
+
 !Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:33'!
 base64Decoded
 	"Decode the receiver from base 64"
@@ -800,14 +817,14 @@ byteSize
 	"Answer number of byte-sized characters if taken as a String"
 	^self size! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:33'!
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 18:32'!
 capitalized
 	"Return a copy with the first letter capitalized"
 	| cap |
-	self isEmpty ifTrue: [ ^self copy ].
+	self isEmpty ifTrue: [ ^self ].
 	cap _ self copy.
-	cap at: 1 put: (cap at: 1) asUppercase.
-	^ cap! !
+	^cap at: 1 put: (cap at: 1) asUppercase.
+! !
 
 !Rope methodsFor: 'comparing' stamp: 'KenD 2/22/2013 08:40'!
 caseInsensitiveLessOrEqual: aStringOrRope 
@@ -882,7 +899,7 @@ compare: aStringOrRope caseSensitive: aBool
 	map := aBool ifTrue:[String caseSensitiveOrder] ifFalse:[String caseInsensitiveOrder].
 	^self compare: self with: aStringOrRope collated: map! !
 
-!Rope methodsFor: 'private' stamp: 'KenD 2/21/2013 19:05'!
+!Rope methodsFor: 'private' stamp: 'KenD 2/23/2013 16:45'!
 compare: rope1 with: rope2 collated: order
 	"Return 1, 2 or 3, if rope1 is <, =, or > rope2, with the collating order of characters given by the order array."
 
@@ -892,8 +909,8 @@ compare: rope1 with: rope2 collated: order
 	len2 _ rope2 size.
 	1 to: (len1 min: len2) do:
 		[:i |
-		c1 _ order at: (rope1 at: i) + 1.
-		c2 _ order at: (rope2 at: i) + 1.
+		c1 _ order at: (rope1 at: i) asciiValue + 1.
+		c2 _ order at: (rope2 at: i) asciiValue + 1.
 		c1 = c2 ifFalse: 
 			[c1 < c2 ifTrue: [^ 1] ifFalse: [^ 3]]].
 	len1 = len2 ifTrue: [^ 2].
@@ -1120,15 +1137,14 @@ editLabel: labelString
 
 	TextModel new contents: self; openLabel: labelString! !
 
-!Rope methodsFor: 'printing' stamp: 'KenD 2/22/2013 20:21'!
+!Rope methodsFor: 'printing' stamp: 'KenD 2/23/2013 14:04'!
 encodeDoublingQuoteOn: aStream 
 	"Print inside string quotes, doubling inbedded quotes."
-	| x |
+
 	aStream print: $'.
-	1 to: self size do:
-		[:i |
-		aStream print: (x _ self at: i).
-		x == $' ifTrue: [aStream print: x]].
+	self do: [ :char  |
+		aStream print: char.
+		char == $' ifTrue: [aStream print: char]].
 	aStream print: $'! !
 
 !Rope methodsFor: 'paragraph support' stamp: 'KenD 2/22/2013 21:04'!
@@ -1185,6 +1201,13 @@ endsWithDigit
 	"Answer whether the receiver's final character represents a digit.  3/11/96 sw"
 
 	^ self size > 0 and: [self last isDigit]! !
+
+!Rope methodsFor: 'comparing' stamp: 'KenD 2/23/2013 15:36'!
+equals:  aStringOrRope 
+	"Answer whether the receiver sorts equally as aStringOrRope.
+	The collation order is case sensitive."
+
+	^ (self = aStringOrRope asRope)! !
 
 !Rope methodsFor: 'private' stamp: 'KenD 2/22/2013 20:26'!
 evaluateExpression: aStringOrRope parameters: aCollection 
@@ -1577,11 +1600,13 @@ is: aStringOrRope substingAt: index
 	(self at: index) = (aStringOrRope at: 1) ifFalse: [ ^false ].
 	^(self findSubstring: aStringOrRope in: self startingAt: index matchTable: (String caseSensitiveOrder)) = index! !
 
-!Rope methodsFor: 'testing' stamp: 'KenD 2/22/2013 20:58'!
+!Rope methodsFor: 'testing' stamp: 'KenD 2/23/2013 16:49'!
 isAllDigits
-	"whether the receiver is composed entirely of digits"
+	"whether the receiver is composed entirely of digits and has at least one digit"
+
 	self do: [:c | c isDigit ifFalse: [^ false]].
-	^ true! !
+	self ifEmpty: [^false].
+      ^ true! !
 
 !Rope methodsFor: 'testing' stamp: 'KenD 2/22/2013 20:58'!
 isAllSeparators
@@ -1759,34 +1784,33 @@ match: text
 (Rope fromString: '*foo*zort'')	match: 'afoodezortorfoo3zort' true
 "! !
 
-!Rope methodsFor: 'accessing' stamp: 'KenD 2/22/2013 20:35'!
+!Rope methodsFor: 'accessing' stamp: 'KenD 2/23/2013 16:53'!
 numArgs 
-	"Answer either the number of arguments that the receiver would take if considered a selector.  Answer -1 if it couldn't be a selector.  Note that currently this will answer -1 for anything begining with an uppercase letter even though the system will accept such symbols as selectors.  It is intended mostly for the assistance of spelling correction."
+	"Answer either the number of arguments that the receiver would take if considered a selector.  Answer -1 if it couldn't be a selector. It is intended mostly for the assistance of spelling correction."
 
-	| firstChar numColons excess start ix |
+	| firstChar numColons start ix |
 	self size = 0 ifTrue: [^ -1].
-	firstChar _ self at: 1.
-	(firstChar isGenerallyValidStartOfInIdentifiers or: [firstChar = $:]) ifTrue:
-		["Fast reject if any chars are non-alphanumeric"
-		(self findSubstring: '~' in: self startingAt: 1 matchTable: (String tokenish)) > 0 ifTrue: [^ -1].
+	firstChar := self at: 1.
+	(firstChar isLetter or: [ firstChar = $_]) ifTrue:
+		["Fast reject if any chars are non-alphanumeric
+		NOTE: fast only for Byte things - Broken for Wide"
+		self class isBytes
+			ifTrue: [(self findSubstring: '~' in: self startingAt: 1 matchTable: (String tokenish)) > 0 ifTrue: [^ -1]]
+			ifFalse: [2 to: self size do: [:i | (self at: i) tokenish ifFalse: [^ -1]]].
 		"Fast colon count"
-		numColons _ 0.  start _ 1.
-		[(ix _ self findSubstring: ':' in: self startingAt: start matchTable: (String caseSensitiveOrder)) > 0]
+		numColons := 0.  start := 1.
+		[(ix := self indexOf: $: startingAt: start) > 0]
 			whileTrue:
-				[numColons _ numColons + 1.
-				start _ ix + 1].
+				[(ix = start or: [(self at: start) isDigit]) ifTrue: [^-1].
+				numColons := numColons + 1.
+				start := ix + 1].
 		numColons = 0 ifTrue: [^ 0].
-		firstChar = $:
-			ifTrue: [excess _ 2 "Has an initial keyword, as #:if:then:else:"]
-			ifFalse: [excess _ 0].
 		self last = $:
-			ifTrue: [^ numColons - excess]
-			ifFalse: [^ numColons - excess - 1 "Has a final keywords as #nextPut::andCR"]].
-	firstChar isSpecial ifTrue:
-		[self size = 1 ifTrue: [^ 1].
-		2 to: self size do: [:i | (self at: i) isSpecial ifFalse: [^ -1]].
-		^ 1].
-	^ -1.! !
+			ifTrue: [^ numColons]
+			ifFalse: [^ -1]].
+	"Test case of binary selector, if self allSatisfy: #isSpecial (inlined for speed)"
+	1 to: self size do: [:i | (self at: i) isSpecial ifFalse: [^ -1]].
+	^1! !
 
 !Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:36'!
 numericSuffix
@@ -1802,11 +1826,34 @@ onlyLetters
 	"answer the receiver with only letters"
 	^ self select: [:each | each isLetter]! !
 
-!Rope methodsFor: 'copying' stamp: 'KenD 2/22/2013 19:48'!
+!Rope methodsFor: 'copying' stamp: 'KenD 2/23/2013 15:37'!
+padLeftTo: totalLength
+
+	^ self padded: #left  to: totalLength  with: Character space! !
+
+!Rope methodsFor: 'copying' stamp: 'KenD 2/23/2013 15:37'!
+padLeftTo: totalLength with: aChar
+
+	^ self padded: #left  to: totalLength  with: aChar! !
+
+!Rope methodsFor: 'copying' stamp: 'KenD 2/23/2013 15:34'!
+padRightTo: totalLength
+
+	^ self padded: #right  to: totalLength  with: Character space.! !
+
+!Rope methodsFor: 'copying' stamp: 'KenD 2/23/2013 15:38'!
+padRightTo: totalLength with: aChar
+
+	^ self padded: #right  to: totalLength  with: aChar! !
+
+!Rope methodsFor: 'copying' stamp: 'KenD 2/23/2013 16:35'!
 padded: leftOrRight to: length with: char
 
-	| padRope |
-	padRope := (String new: length withAll: char) asRope.
+	| padRope padLen |
+	padLen := length - (self size)..
+	padLen <= 0 ifTrue: [ ^self ].
+	
+	padRope := (String new: padLen withAll: char) asRope.
 	
 	leftOrRight = #left ifTrue:
 		[^ (padRope , self) ].
@@ -1836,15 +1883,15 @@ print
 
 	Transcript show: self; newLine! !
 
-!Rope methodsFor: 'printing' stamp: 'KenD 2/10/2013 20:10'!
+!Rope methodsFor: 'printing' stamp: 'KenD 2/23/2013 14:10'!
 printOn: aStream
 	"Look good in the inspector"
 
-	aStream nextPutAll: 'Rope('. "??self class printOn:??"
-	aStream nextPut: $' .
-	aStream nextPutAll: self stringRepresentation.
-	aStream nextPut: $' .
-	aStream nextPut: $)! !
+	aStream nextPutAll: 'Rope('''. "??self class printOn:??"
+	self do: [ :char  |
+		aStream nextPut: char.
+		char == $'  ifTrue: [aStream nextPut: char]].
+	aStream nextPutAll:''')'! !
 
 !Rope methodsFor: 'printing' stamp: 'KenD 2/10/2013 19:56'!
 printString
@@ -1963,6 +2010,11 @@ skipDelimiters: delimiters startingAt: start
 		delimiters detect: [:delim | delim = (self at: i)]
 				ifNone: [^ i]].
 	^ self size + 1! !
+
+!Rope methodsFor: 'accessing' stamp: 'KenD 2/23/2013 07:43'!
+species
+
+	^Rope! !
 
 !Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:44'!
 splitInteger
@@ -2106,30 +2158,48 @@ stemAndNumericSuffix
 
 "'Fred2305' stemAndNumericSuffix"! !
 
-!Rope methodsFor: 'printing' stamp: 'KenD 2/22/2013 20:24'!
+!Rope methodsFor: 'printing' stamp: 'KenD 2/23/2013 14:05'!
 storeOn: aStream 
-	"Act like a String"
+	"Act like (aString asRope)"
 	"Print inside string quotes, doubling inbedded quotes."
-	| char |
-	aStream nextPut: $'.
-	1 to: self size do:
-		[:index |
-		aStream nextPut: (char _ self at: index).
-		char == $' ifTrue: [aStream nextPut: char]].
-	aStream nextPut: $'! !
+
+	aStream nextPut: $( .
+	self encodeDoublingQuoteOn: aStream.
+	aStream nextPutAll: ' asRope)'.! !
 
 !Rope methodsFor: 'printing' stamp: 'KenD 2/9/2013 19:36'!
 stringRepresentation
 
 	^String streamContents: [:s | self do: [ :char | s nextPut: char]]! !
 
-!Rope methodsFor: 'private' stamp: 'KenD 2/22/2013 20:33'!
-stringhash
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 17:03'!
+subStrings: separators 
+	"Answer an array containing the substrings in the receiver separated 
+	by the elements of separators."
+	| result sourceStream subStringStream |
+	((separators isKindOf: String) 
+	  or: [(separators isKindOf: Rope) 
+		or: [ separators allSatisfy: [ :element | element isKindOf: Character ]]])
+	ifFalse: [ ^ self error: 'separators must be Characters.' ].
+	
+	sourceStream := self readStream.
+	result := OrderedCollection new.
+	subStringStream := String new writeStream.
+	[ sourceStream atEnd ] whileFalse: [
+		| char |
+		char := sourceStream next.
+		(separators includes: char)
+			ifTrue: [
+				subStringStream isEmpty ifFalse: [
+					result add: subStringStream contents asRope.
+					subStringStream := String new writeStream ] ]
+			ifFalse: [
+				subStringStream nextPut: char ] ].
+	subStringStream isEmpty ifFalse: [
+		result add: subStringStream contents asRope ].
+	^ result asArray! !
 
-	"@@FIXME this looks pretty useless"
-	^self hash! !
-
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:50'!
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 16:58'!
 substrings
 	"Answer an array of the substrings that compose the receiver."
 	| result end beginning separators |
@@ -2175,28 +2245,68 @@ tabDelimitedFieldsDo: aBlock
 'fred	charlie	elmo		2' asRope  tabDelimitedFieldsDo: [:aField |  Transcript newLine; show: aField]
 "! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 22:00'!
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 20:29'!
 translateFrom: start  to: stop  table: table
 	"translate the characters in the string by the given table, in place"
-	Rope translate: self  from: start to: stop table: table! !
+	^Rope translate: self  from: start to: stop table: table! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 22:00'!
-translateToLowercase
-	"Translate all characters to lowercase, in place"
-
-	self translateWith: (String lowercasingTable)! !
-
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 22:03'!
-translateToUppercase
-	"Translate all characters to lowercase, in place"
-
-	self translateWith: (String uppercasingTable)! !
-
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 22:03'!
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 19:46'!
 translateWith: table
-	"translate the characters in the string by the given table, in place"
+	"translate the characters in the string by the given table"
 	
-	^self translateFrom: 1 to: self size table: table! !
+	^self translateFrom: 1 to: (self size) table: table! !
+
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 17:29'!
+trimBoth
+	"Trim separators from both sides of the receiving string."
+	
+	^ self trimBoth: [ :char | char isSeparator ]! !
+
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 17:29'!
+trimBoth: aBlock
+	"Trim characters satisfying the condition given in aBlock from both sides of the receiving string."
+
+	^ self trimLeft: aBlock right: aBlock! !
+
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 17:28'!
+trimLeft
+	"Trim separators from the left side of the receiving string."
+	
+	^ self trimLeft: [ :char | char isSeparator ] ! !
+
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 17:25'!
+trimLeft: aBlock
+	"Trim characters satisfying the condition given in aBlock from the left side of the receiving string."
+	
+	^ self trimLeft: aBlock right: [ :char | false ]! !
+
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 17:25'!
+trimLeft: aLeftBlock right: aRightBlock
+	"Trim characters satisfying the condition given in aLeftBlock from the left side and aRightBlock from the right sides of the receiving string."
+
+	| left right |
+	left := 1.
+	right := self size.
+	
+	[ left <= right and: [ aLeftBlock value: (self at: left) ] ]
+		whileTrue: [ left := left + 1 ].
+		
+	[ left <= right and: [ aRightBlock value: (self at: right) ] ]
+		whileTrue: [ right := right - 1 ].
+		
+	^ self copyFrom: left to: right! !
+
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 17:28'!
+trimRight
+	"Trim separators from the right side of the receiving string."
+	
+	^ self trimRight: [ :char | char isSeparator ]! !
+
+!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 17:26'!
+trimRight: aBlock
+	"Trim characters satisfying the condition given in aBlock from the right side of the receiving string."
+	
+	^ self trimLeft: [ :char | false ] right: aBlock! !
 
 !Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 22:04'!
 truncateTo: smallSize
@@ -2504,6 +2614,12 @@ does: aCharacter collateBefore: otherCharacter
 	"Delegate to String"
 	^(String does: aCharacter collateBefore: otherCharacter)! !
 
+!Rope class methodsFor: 'instance creation' stamp: 'KenD 2/23/2013 13:47'!
+emptyString
+	"Answer a Rope containing a single Lf character."
+
+	^ EmptyRope ! !
+
 !Rope class methodsFor: 'private' stamp: 'KenD 2/12/2013 17:08'!
 fibonacci
 
@@ -2578,14 +2694,16 @@ indexOfAscii: anInteger inString: aString startingAt: start
 	^ 0
 ! !
 
-!Rope class methodsFor: 'class initialization' stamp: 'KenD 2/16/2013 14:47'!
+!Rope class methodsFor: 'class initialization' stamp: 'KenD 2/23/2013 13:47'!
 initialize
 "
 	Rope initialize.
 "
 	Fibonacci :=   #( 0  1  1  2  3  5  8  13  21  34  55  89  144  233  377  610  987  1597  2584  4181  6765  10946  17711  28657  46368  75025  121393  196418  317811  514229  832040  1346269  2178309  3524578  5702887  9227465  14930352  24157817  39088169  63245986  102334155  165580141  267914296  433494437  701408733  1134903170  1836311903  2971215073  4807526976  7778742049  12586269025  20365011074  32951280099  53316291173  86267571272  139583862445  225851433717  365435296162  591286729879  956722026041  1548008755920  2504730781961  4052739537881  6557470319842  10610209857723  17167680177565  27777890035288  44945570212853  72723460248141  117669030460994  190392490709135  308061521170129  498454011879264  806515533049393  1304969544928657  2111485077978050  3416454622906707  5527939700884757  8944394323791464  14472334024676221  23416728348467685  37889062373143906  61305790721611591  99194853094755497  160500643816367088  259695496911122585  420196140727489673  679891637638612258  1100087778366101931  1779979416004714189  2880067194370816120  4660046610375530309  7540113804746346429 ).
 	
-	MaxRopeDepth := 96.  "rebalance ropes whose depth exceeds this"! !
+	MaxRopeDepth := 96.  "rebalance ropes whose depth exceeds this"
+	
+	EmptyRope := '' asRope. "May as well share this"! !
 
 !Rope class methodsFor: 'instance creation' stamp: 'KenD 2/21/2013 17:33'!
 lfString
@@ -2649,6 +2767,12 @@ readFrom: inStream
 	
 	^ self fromString: (String readFrom: inStream)! !
 
+!Rope class methodsFor: 'instance creation' stamp: 'KenD 2/23/2013 17:40'!
+space
+	"Answer a string containing a single tab character."
+
+	^ (Character space asRope )! !
+
 !Rope class methodsFor: 'as yet unclassified' stamp: 'KenD 2/21/2013 17:48'!
 stringHash: aString initialHash: speciesHash
 
@@ -2672,19 +2796,18 @@ tab
 
 	^ (Character tab asRope )! !
 
-!Rope class methodsFor: 'as yet unclassified' stamp: 'KenD 2/21/2013 18:56'!
+!Rope class methodsFor: 'as yet unclassified' stamp: 'KenD 2/23/2013 20:28'!
 translate: aString from: start  to: stop  table: table
 	"Translate the characters in the string by the given table.
 	Answer a new rope with the translation"
 
 	| subStr aRope |
+	subStr := (start to: stop) collect: [ :index | table at: (aString at: index) asciiValue + 1 ].
 	aRope := aString asRope.
-	subStr := (aRope copyFrom: start  to: stop) asString.. 
-	start to: stop do: [ :i |
-		subStr at: i put: (table at: (subStr at: i) asciiValue+1) 
-	].
 	
-	^ (aRope copyFrom: 1 to: (start - 1)) , (subStr asRope) ,  (aRope copyFrom: (stop + 1) to: (aRope size))! !
+	^ ( aRope copyFrom: 1 to: (start - 1)) ,  
+		subStr asRope ,  
+		(aRope copyFrom: (stop + 1) to: (aRope size))! !
 
 !Rope class methodsFor: 'instance creation' stamp: 'KenD 2/21/2013 17:41'!
 value: anInteger
@@ -2767,7 +2890,7 @@ testIterationTime
 	
 ! !
 
-!RopeTest methodsFor: 'testing' stamp: 'KenD 2/22/2013 19:33'!
+!RopeTest methodsFor: 'initialize-release' stamp: 'KenD 2/23/2013 19:14'!
 setUp
 
 	"Set up class variables (before each test)."
@@ -2782,21 +2905,6 @@ setUp
 	concRope3 := ConcatRope concatenate: ('Now is the time ' asRope) with: subRope.
 	longFlat  := FlatRope fromString: '123456789012345678901234567890'. "long"
 	shortFlat := FlatRope fromString: 'short'. "short"
-	"String tests"
-	string := 'Hi, I am a String' asRope.
-	emptyString := '' asRope.
-	subcollection3ElementsSorted := 'bcd' asRope.
-	nonEmpty5ElementsSorted := ('a' asRope) , subcollection3ElementsSorted , 'e'.
-	unsortedCollection := 'azsbe' asRope.
-	indexInNonEmptyArray := #(1 3 2 ).
-	arrayWithCharacters := #($a $b $c ).
-	nonEmpty1element := 'a' asRope.
-	withoutEqualElements := 'abcde' asRope.
-	
-	sameAtEndAndBegining := 'abca' asRope.
-	elementInNonEmpty := $c.
-	notIn := $z.
-	collectionNotIncluded := notIn asRope , notIn asRope.
 ! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/10/2013 14:45'!
@@ -2811,6 +2919,91 @@ testAccess
 	self assert: ((concRope2 at: (concRope1 size + 5)) = $5).
 	self assert: ((concRope3 at: 5) = $i).
 	self assert: ((concRope3 at: (16 + 5)) = $5).! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 19:20'!
+testAsCamelCase
+
+       self assert: 'A man, a plan, a canal, panama' asRope asCamelCase = 'AMan,APlan,ACanal,Panama'.
+       self assert: 'Here 123should % be 6 the name6 of the method' asRope asCamelCase = 'Here123should%Be6TheName6OfTheMethod' .
+	self assert: ' how do you do? ' asRope asCamelCase  = 'howDoYouDo?' .! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 20:35'!
+testAsCase
+
+       self assert: ( 'CaMeL' asRope asLowercase  = 'camel').
+       self assert: ( 'CaMeL' asRope asUppercase  = 'CAMEL').
+ ! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 19:37'!
+testAsIdentifier
+
+       self assert: ((( '234Fred987' asRope) asIdentifier: false) =  'fred987' ) .
+       self assert: (( '235Fred987'  asRope asIdentifier: true) = 'Fred987').
+       self assert: ((Rope emptyString) asIdentifier: true)  = 'A' .  "Also works for empty rope"
+       self assert: ((( '()87234'  asRope) asIdentifier: false) =  'a87234').
+       self assert: ((( '())z>=PPve889  U >'  asRope) asIdentifier: false) = 'zPPve889U').! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 19:32'!
+testAsInteger
+
+       self assert: ( '1796exportFixes-tkMX' asRope asInteger) = 1796 .
+       self assert: ( '1848recentLogFile-sw' asRope asInteger)   = 1848 .
+       self assert: ( 'donald'  asRope asInteger) =  nil .
+       self assert: ( 'abc234def567'  asRope asInteger) =  234 .! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 19:41'!
+testAsLegalSelector
+
+       self assert: ( '234znak 43 ) 2' asRope asLegalSelector  = 'v234znak432').
+ ! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 18:26'!
+testCapitalized
+
+	| uc lc empty |		
+	uc := 'MElViN' asRope.
+	lc := 'mElViN' asRope.
+	empty := ' ' asRope.
+	self assert:  lc capitalized = uc.
+	self assert: uc capitalized = uc.
+	"the string gets copied"
+	self deny: uc capitalized == uc.
+	self deny: empty capitalized == empty.! !
+
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/23/2013 19:13'!
+testComparing
+	self assert: 'foo' asRope < 'foo:'.
+	self assert: 'foo' asRope < 'fooBar'.
+	self assert: 'foo' asRope <= 'foo:'.
+	self assert: 'foo' asRope <= 'fooBar'.
+	self assert: 'foo:' asRope > 'foo'.
+	self assert: 'fooBar' asRope > 'foo'.
+	self assert: 'foo:' asRope >= 'foo'.
+	self assert: 'fooBar' asRope >= 'foo'! !
+
+!RopeTest methodsFor: 'test - formatting' stamp: 'KenD 2/23/2013 18:21'!
+testFormat
+
+	self
+		assert: ('This is {1} !!' asRope format: #('a test'))
+		equals: 'This is a test !!'.
+
+ 	{ 
+ 		[ '\{ \} \\ foo {1} bar {2}' asRope format: { 12. 'string' } ] -> '{ } \ foo 12 bar string'. 
+ 		[ '\{ \} \\ foo {2} bar {1}' asRope format: { 'string'. 12 } ] -> '{ } \ foo 12 bar string'. 
+ 		[ '\{1}' asRope format: {} ] -> '{1}'. 
+ 		[ '\{1}{1}' asRope format: { $a } ] -> '{1}a'. 
+ 	} do: [ :each | 
+		self assert: each key value equals: each value ]! !
+
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/23/2013 15:24'!
+testIsAllDigits
+	"self run: #testIsAllDigits"
+	self deny: ((Rope emptyString) isAllDigits).
+	self deny: ( '1.23' asRope isAllDigits).
+	self deny: ( '12 3' asRope isAllDigits).
+	self deny: ( '-123' asRope isAllDigits).
+	self assert: ('0123456789' asRope isAllDigits).! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/22/2013 19:41'!
 testMatch
@@ -2836,7 +3029,7 @@ testMatch
 	#('bar' 'foo#' '#foo' '*foo#' '#foo*' '*bar*') do: [ :each |
 		self deny: (each asRope match: 'foo') ]! !
 
-!RopeTest methodsFor: 'testing' stamp: 'KenD 2/12/2013 18:55'!
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/23/2013 14:15'!
 testMeld
 	"Do we meld short ropes?"
 
@@ -2855,6 +3048,8 @@ testMeld
 	self assert: ( (shortFlat , shortFlat , longFlat) depth = 1 ).
 	self assert: ( (shortFlat , longFlat , shortFlat) depth = 2 ).
 	self assert: ( (shortFlat , shortFlat , shortFlat) depth = 0 ).
+	self assert: ((('Given enough rope' asRope) ,  (Rope newLineString) , ('you can write a text editor!!' asRope)) depth = 2).
+	self assert: ((('Given enough rope' asRope) ,  (Rope newLineString) , ('you can write a text editor!!' asRope)) size = 46).
 ! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/10/2013 19:40'!
@@ -2877,6 +3072,88 @@ testMutation
 	self assert: ((concRope3 at: 20 put: $0) asString =   'Now is the time abc05678hijk' ).
 	self assert: ((concRope3 at: (concRope1 size) put: $0) asString =   'Now is the time abcd5678hij0' ).
 ! !
+
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/23/2013 15:26'!
+testNumArgs
+	"This is about http://code.google.com/p/pharo/issues/detail?id=237"
+	
+	| binary |
+	binary := '*+-/\~=<>&@%,|' asRope.
+	self assert: (binary allSatisfy: [:char1 |
+			(String with: char1) numArgs = 1 and: [binary allSatisfy: [:char2 |
+				(String with: char1 with: char2) numArgs = 1 and: [binary allSatisfy: [:char3 |
+					(String with: char1 with: char2 with: char3) numArgs = 1]]]]])
+		description: 'binary selectors have 1 argument'.
+		
+	self assert: 'x' asRope numArgs = 0
+		description: 'unary selectors have 0 arguments'.
+	self assert: 'x0' asRope numArgs = 0
+		description: 'unary selectors have 0 arguments'.
+	self assert: 'yourself' asRope numArgs = 0
+		description: 'unary selectors have 0 arguments'.
+		
+	self assert: 'x:' asRope numArgs = 1
+		description: 'keyword selectors have as many elements as colons characters'.
+	self assert: 'x:y:' asRope numArgs = 2
+		description: 'keyword selectors have as many elements as colons characters'.
+	self assert: 'at:put:' asRope numArgs = 2
+		description: 'keyword selectors have as many elements as colons characters'.
+			
+	self assert: 'x_y_z' asRope numArgs = 0
+		description: 'selectors can contain underscores'.
+	self assert: '_x' asRope numArgs = 0
+		description: 'selectors can begin with an underscore'.
+	self assert: '_:_:' asRope numArgs = 2
+		description: 'keyword selectors can contain underscores'.
+		
+	self assert: 'at:withoutTrailingColon' asRope numArgs = -1
+		description: 'keyword selectors should have a trailing colon character'.
+		
+	self assert: ':x' asRope numArgs = -1
+		description: 'keyword selectors cannot begin with a colon character'.
+		
+	self assert: 'x::y:' asRope numArgs = -1
+		description: 'keyword selectors cannot have two consecutive colon characters'.
+		
+	self assert: '0x' asRope numArgs = -1
+		description: 'selectors cannot begin with a digit'.
+		
+	self assert: 'x::0y:' asRope numArgs = -1
+		description: 'keyword selectors cannot have any key beginning with a digit'.
+	
+	! !
+
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/23/2013 15:28'!
+testPadLeftTo
+	| aRope |
+	aRope := 'a' asRope.
+	self assert: ( aRope padLeftTo: 3) equals: '  a'. 
+	self assert: (aRope padLeftTo: 1) equals: 'a'. 
+	self assert: (aRope padLeftTo: 0) equals: 'a'.! !
+
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/23/2013 15:39'!
+testPadLeftToWith
+	| aRope |
+	aRope := 'a' asRope.
+	self assert: (aRope padLeftTo: 3 with: $#) equals: '##a'. 
+	self assert: (aRope padLeftTo: 1 with: $#) equals: 'a'. 
+	self assert: (aRope padLeftTo: 0 with: $#) equals: 'a'.! !
+
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/23/2013 15:39'!
+testPadRightTo
+	| aRope |
+	aRope := 'a' asRope.
+	self assert: (aRope padRightTo: 3) equals: 'a  '. 
+	self assert: (aRope padRightTo: 1) equals: 'a'. 
+	self assert: (aRope padRightTo: 0) equals: 'a'.! !
+
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/23/2013 15:40'!
+testPadRightToWith
+	| aRope |
+	aRope := 'a' asRope.
+	self assert: (aRope padRightTo: 3 with: $#) equals: 'a##'. 
+	self assert: (aRope padRightTo: 1 with: $#) equals: aRope. 
+	self assert: (aRope padRightTo: 0 with: $#) equals: aRope.! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/10/2013 20:12'!
 testPrint
@@ -2910,6 +3187,25 @@ testRebalance
 	self assert: ( t1 rebalance depth = 3 ).
 	self assert: ( t2 depth = 11 ).
 	self assert: ( t2 rebalance depth = 4 ).! !
+
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/23/2013 17:39'!
+testSpace
+	"self debug: #testSpace"
+	
+	string := Rope new.
+	self assert: string size = 0. "instead of #isEmpty to be consistent with the following test"
+	
+	string := Rope space.
+	self assert: string size = 1.
+	self assert: string = ' '! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 17:04'!
+testSubStrings
+	self assert: ('aba' asRope subStrings: 'bc') isArray.
+	self assert: ('aba' asRope subStrings: 'bc') = #('a' 'a').
+	self assert: ('abba' asRope subStrings: 'bc') = #('a' 'a').
+	self assert: ('babbab' asRope subStrings: 'bc') = #('a' 'a').
+	self assert: ('bbabbabb' asRope subStrings: 'bc') = #('a' 'a').! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/11/2013 18:50'!
 testSubstring
@@ -2951,6 +3247,101 @@ testSubstring
 					=  'abcd5678@@ new stuff @@ijk new string tail' ).
 
 ! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 17:31'!
+testTrimBoth
+	self assert: Rope emptyString trimBoth = ''.
+	self assert: ' ' asRope trimBoth = ''.
+	self assert: '	' asRope trimBoth = ''.
+	self assert: 'foo' asRope trimBoth = 'foo'.
+	self assert: ' foo ' asRope trimBoth = 'foo'.
+	self assert: '  foo  ' asRope trimBoth = 'foo'.
+	self assert: ((Rope newLineString ), '   foo  ') trimBoth = 'foo'.
+	
+	self assert: ('aabbaa' asRope trimBoth: [ :each | each = $a ]) = 'bb'.
+	self assert: ('bbaabb' asRope trimBoth: [ :each | each = $a ]) = 'bbaabb'! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 17:31'!
+testTrimLeft
+	self assert: Rope emptyString trimLeft = ''.
+	self assert: ' ' asRope trimLeft = ''.
+	self assert: '	' asRope trimLeft = ''.
+	self assert: 'foo' asRope trimLeft = 'foo'.
+	self assert: ' foo ' asRope trimLeft = 'foo '.
+	self assert: '  foo  ' asRope trimLeft = 'foo  '.
+	
+	self assert: ('aabbaa' asRope trimLeft: [ :each | each = $a ]) = 'bbaa'.
+	self assert: ('bbaabb' asRope trimLeft: [ :each | each = $a ]) = 'bbaabb'! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 20:49'!
+testTrimRight
+	self assert: '' asRope trimRight = ''.
+	self assert: ' ' asRope trimRight = ''.
+	self assert: '	' asRope trimRight = ''.
+	self assert: 'foo' asRope trimRight = 'foo'.
+	self assert: ' foo ' asRope trimRight = ' foo'.
+	self assert: '  foo  ' asRope trimRight = '  foo'.
+	
+	self assert: ('aabbaa' asRope trimRight: [ :each | each = $a ]) = 'aabb'.
+	self assert: ('bbaabb' asRope trimRight: [ :each | each = $a ]) = 'bbaabb'.
+	self assert: (  ' abc  d   ' asRope withoutTrailingBlanks = ' abc  d' ). ! !
+
+!RopeTest methodsFor: 'test - copy' stamp: 'KenD 2/23/2013 19:08'!
+testTrimmed
+	self assert: '  a  ' asRope trimBoth = 'a'. ! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 18:34'!
+testUpTo
+	"self debug: #testUpTo"
+	self assert: #up:to: asRope keywords = #(up: to:).
+	self assert: #copy:from:to: asRope keywords = #(copy: from: to:).
+	self assert: #up asRope keywords = #(up).
+	self assert: #at: asRope keywords = #(at:).
+	! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 18:37'!
+testWithNoLineLongerThan
+	"self run: #testWithNoLineLongerThan"
+	self assert: ('Hello World' asRope withNoLineLongerThan: 5) = ('Hello', Rope newLineString, 'World').
+	self shouldnt: [Rope crlfString withNoLineLongerThan: 5] raise: Error.
+	self shouldnt: [('Hello'  asRope, Rope newLineString , Rope newLineString,'World') withNoLineLongerThan: 5] raise: Error.
+	self assert: ('Sample text to line break at some point' asRope withNoLineLongerThan:  28)
+		= ('Sample text to line break at', Rope newLineString, 'some point').
+	self assert: ('Sample text' asRope , Rope newLineString, 'to line break', Rope newLineString, 'at some point' withNoLineLongerThan:  28)
+		= ('Sample text'asRope , Rope newLineString, 'to line break', Rope newLineString, 'at some point').
+! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 20:47'!
+testWithoutLeadingDigits
+
+	self assert: ( '234Whoopie' asRope withoutLeadingDigits = 'Whoopie').
+	self assert: ( ' 4321 BlastOff!!'  asRope withoutLeadingDigits  = 'BlastOff!!' ).
+	self assert: ( 'wimpy' asRope withoutLeadingDigits = 'wimpy' ).
+	self assert: ( '  89Ten 12   ' asRope withoutLeadingDigits = 'Ten 12   ' ).
+	self assert: ( '78 92' asRope withoutLeadingDigits = '' ).
+	self assert: ( '9876 and with several words 9876' asRope withoutLeadingDigits  = 'and with several words 9876' ).
+	self assert: (  '123another one123' asRope withoutLeadingDigits = 'another one123' ).
+
+! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 20:42'!
+testWithoutTrailingDigits
+
+	self assert: ( 'Whoopie234' asRope withoutTrailingDigits = 'Whoopie').
+	self assert: ( 'BlastOff!! 4321 ' asRope withoutTrailingDigits  = 'BlastOff!!' ).
+	self assert: ( 'wimpy' asRope withoutTrailingDigits = 'wimpy' ).
+	self assert: ( '  89Ten 12   ' asRope withoutTrailingDigits = '  89Ten' ).
+	self assert: ( '78 92' asRope withoutTrailingDigits = '' ).
+	self assert: ( 'and with several words 9876' asRope withoutTrailingDigits  = 'and with several words' ).
+	self assert: (  '123another one123' asRope withoutTrailingDigits = '123another one' ).
+
+! !
+
+!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 17:22'!
+testindexOfstartingAt
+
+	self assert: ('aa aa éé aa aa' asRope indexOf: $a startingAt: 8) = 12.
+	self assert: ('aa aa éé aa aa' asRope indexOf: $z startingAt: 8) = 0.! !
 
 !String methodsFor: '*ropes' stamp: 'KenD 2/9/2013 19:48'!
 asRope
@@ -3037,7 +3428,7 @@ at: index put: aCharacter
 	   aCharacter asRope ,
 	   (self copyFrom: (index + 1) to: self size )! !
 
-!SubRope methodsFor: 'copying' stamp: 'KenD 2/11/2013 17:11'!
+!SubRope methodsFor: 'copying' stamp: 'KenD 2/23/2013 13:53'!
 copyFrom: start to: stop 
 	"Answer a SubRope which shares my string"
 	
@@ -3046,7 +3437,7 @@ copyFrom: start to: stop
 	offsetStop := stop  - 1 + self startIndex.
 	
 	"Handle odd case the same way as OrderedCollection"
-	(stop < start) ifTrue: [^ FlatRope fromString: ''].
+	(stop < start) ifTrue: [^ Rope emptyString ].
 
 	((1 <= start) and: [stop <= (self string size)])
 	ifTrue: [
