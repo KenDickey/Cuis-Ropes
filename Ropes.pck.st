@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1610] on 23 February 2013 at 8:50:20 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1610] on 25 February 2013 at 2:24:04 pm'!
 'Description Ropes: functional, immutable strings'!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -2738,6 +2738,14 @@ merge: leafNodes start: start end: end
 	   (self merge: leafNodes start: middle end: end)
 	! !
 
+!Rope class methodsFor: 'instance creation' stamp: 'KenD 2/25/2013 14:11'!
+newFrom:  aCollection
+	"Answer a new rope"
+"
+	{ $c. $a. $t.} as: Rope.
+"
+	^FlatRope fromString: (aCollection as: String)! !
+
 !Rope class methodsFor: 'instance creation' stamp: 'KenD 2/21/2013 17:33'!
 newLineString
 	"Answer a string containing a single newLine (i.e. Lf) character."
@@ -2970,7 +2978,7 @@ testCapitalized
 	self deny: uc capitalized == uc.
 	self deny: empty capitalized == empty.! !
 
-!RopeTest methodsFor: 'testing' stamp: 'KenD 2/23/2013 19:13'!
+!RopeTest methodsFor: 'testing' stamp: 'KenD 2/25/2013 14:23'!
 testComparing
 	self assert: 'foo' asRope < 'foo:'.
 	self assert: 'foo' asRope < 'fooBar'.
@@ -2979,7 +2987,9 @@ testComparing
 	self assert: 'foo:' asRope > 'foo'.
 	self assert: 'fooBar' asRope > 'foo'.
 	self assert: 'foo:' asRope >= 'foo'.
-	self assert: 'fooBar' asRope >= 'foo'! !
+	self assert: 'fooBar' asRope >= 'foo'.
+	self assert: ({ $c. $a. $t.} as: Rope) = 'cat'.
+	! !
 
 !RopeTest methodsFor: 'test - formatting' stamp: 'KenD 2/23/2013 18:21'!
 testFormat
