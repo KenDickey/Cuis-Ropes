@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1610] on 25 February 2013 at 2:24:04 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1616] on 26 February 2013 at 9:42:42 am'!
 'Description Ropes: functional, immutable strings'!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -2965,6 +2965,16 @@ testAsLegalSelector
        self assert: ( '234znak 43 ) 2' asRope asLegalSelector  = 'v234znak432').
  ! !
 
+!RopeTest methodsFor: 'test - converting' stamp: 'hjh 2/26/2013 09:41'!
+testBase64
+"copied from Cuis 4.1 class StringTest"
+"self new testBase64"
+
+	self 
+		assert: 'SGVsbG8gV29ybGQ=' asRope base64Decoded = 'Hello World' asRope;
+		assert: 'Hello World' asRope base64Encoded = 'SGVsbG8gV29ybGQ=' asRope;
+		assert: (String new: 100 withAll: $x) asRope base64Encoded  = 'eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eA==' asRope! !
+
 !RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 18:26'!
 testCapitalized
 
@@ -2978,6 +2988,15 @@ testCapitalized
 	self deny: uc capitalized == uc.
 	self deny: empty capitalized == empty.! !
 
+!RopeTest methodsFor: 'test - converting' stamp: 'hjh 2/26/2013 09:38'!
+testCaseConversion
+      "copied from Cuis 4.1 class StringTest"
+	"
+	self new testCaseConversion
+	"
+	self assert: ('año Comé tomá Camión' asRope asLowercase) = 'año comé tomá camión' asRope.
+	self assert: ('año Comé tomá Camión' asRope asUppercase) = 'AÑO COMÉ TOMÁ CAMIÓN' asRope! !
+
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/25/2013 14:23'!
 testComparing
 	self assert: 'foo' asRope < 'foo:'.
@@ -2990,6 +3009,98 @@ testComparing
 	self assert: 'fooBar' asRope >= 'foo'.
 	self assert: ({ $c. $a. $t.} as: Rope) = 'cat'.
 	! !
+
+!RopeTest methodsFor: 'test - paragraph' stamp: 'hjh 2/26/2013 09:25'!
+testEncompassParagraph1
+	"copied from Cuis 4.1 class StringTest"
+
+	self assert: ('a' asRope encompassParagraph: (1 to: 0)) = (1 to: 1).
+	self assert: ('a' asRope encompassParagraph: (1 to: 1)) = (1 to: 1).
+	self assert: ('a' asRope encompassParagraph: (2 to: 1)) = (1 to: 1).! !
+
+!RopeTest methodsFor: 'test - paragraph' stamp: 'hjh 2/26/2013 09:26'!
+testEncompassParagraph2
+    "copied from Cuis 4.1 class StringTest"
+
+	self assert: ('ab' asRope encompassParagraph: (1 to: 0)) = (1 to: 2).
+	self assert: ('ab' asRope encompassParagraph: (1 to: 1)) = (1 to: 2).
+	self assert: ('ab' asRope encompassParagraph: (1 to: 2)) = (1 to: 2).
+	self assert: ('ab' asRope encompassParagraph: (2 to: 1)) = (1 to: 2).
+	self assert: ('ab' asRope encompassParagraph: (2 to: 2)) = (1 to: 2).
+	self assert: ('ab' asRope encompassParagraph: (3 to: 2)) = (1 to: 2).! !
+
+!RopeTest methodsFor: 'test - paragraph' stamp: 'hjh 2/26/2013 09:28'!
+testEncompassParagraph3
+"copied from Cuis 4.1 class StringTest"
+
+self assert: ('a
+' asRope encompassParagraph: (1 to: 0)) = (1 to: 2).
+self assert: ('a
+' asRope encompassParagraph: (1 to: 1)) = (1 to: 2).
+self assert: ('a
+' asRope encompassParagraph: (1 to: 2)) = (1 to: 2).
+self assert: ('a
+' asRope encompassParagraph: (2 to: 1)) = (1 to: 2).
+self assert: ('a
+' asRope encompassParagraph: (2 to: 2)) = (1 to: 2).
+self assert: ('a
+' asRope encompassParagraph: (3 to: 2)) = (3 to: 2).
+
+self assert: ('a
+zcxv' asRope encompassParagraph: (1 to: 0)) = (1 to: 2).
+self assert: ('a
+zcxv' asRope encompassParagraph: (1 to: 1)) = (1 to: 2).
+self assert: ('a
+zxcv' asRope encompassParagraph: (1 to: 2)) = (1 to: 2).
+self assert: ('a
+zxcv' asRope encompassParagraph: (2 to: 1)) = (1 to: 2).
+self assert: ('a
+zxcv' asRope encompassParagraph: (2 to: 2)) = (1 to: 2).
+self assert: ('a
+zxcv' asRope encompassParagraph: (3 to: 2)) = (3 to: 6).! !
+
+!RopeTest methodsFor: 'test - paragraph' stamp: 'hjh 2/26/2013 09:30'!
+testEncompassParagraph4
+"copied from Cuis 4.1 class StringTest"
+
+self assert: ('
+b' asRope encompassParagraph: (1 to: 0)) = (1 to: 1).
+self assert: ('
+b' asRope encompassParagraph: (1 to: 1)) = (1 to: 1).
+self assert: ('
+b' asRope encompassParagraph: (1 to: 2)) = (1 to: 2).
+self assert: ('
+b' asRope encompassParagraph: (2 to: 1)) = (2 to: 2).
+self assert: ('
+b' asRope encompassParagraph: (2 to: 2)) = (2 to: 2).
+self assert: ('
+b' asRope encompassParagraph: (3 to: 2)) = (2 to: 2).
+! !
+
+!RopeTest methodsFor: 'test - paragraph' stamp: 'hjh 2/26/2013 09:31'!
+testEncompassParagraph5
+"copied from Cuis 4.1 class StringTest"
+
+self assert: ('a
+b' asRope encompassParagraph: (1 to: 0)) = (1 to: 2).
+self assert: ('a
+b' asRope encompassParagraph: (1 to: 1)) = (1 to: 2).
+self assert: ('a
+b' asRope encompassParagraph: (1 to: 2)) = (1 to: 2).
+self assert: ('a
+b' asRope encompassParagraph: (1 to: 3)) = (1 to: 3).
+self assert: ('a
+b' encompassParagraph: (2 to: 1)) = (1 to: 2).
+self assert: ('a
+b' asRope encompassParagraph: (2 to: 2)) = (1 to: 2).
+self assert: ('a
+b' asRope encompassParagraph: (2 to: 3)) = (1 to: 3).
+self assert: ('a
+b' asRope encompassParagraph: (3 to: 2)) = (3 to: 3).
+self assert: ('a
+b' asRope encompassParagraph: (3 to: 3)) = (3 to: 3).
+self assert: ('a
+b' asRope encompassParagraph: (4 to: 3)) = (3 to: 3).! !
 
 !RopeTest methodsFor: 'test - formatting' stamp: 'KenD 2/23/2013 18:21'!
 testFormat
@@ -3014,6 +3125,34 @@ testIsAllDigits
 	self deny: ( '12 3' asRope isAllDigits).
 	self deny: ( '-123' asRope isAllDigits).
 	self assert: ('0123456789' asRope isAllDigits).! !
+
+!RopeTest methodsFor: 'test - paragraph' stamp: 'hjh 2/26/2013 09:36'!
+testLineSeparators
+	"
+	Test that #newLineCharacter is considered a line separator and not a line terminator.
+	This means that the last line never ends with a #newLineCharacter (although it might be empty!!)
+	StringTest new testLineSeparators
+	"
+	"copied from Cuis 4.1 class StringTest"
+	"self new testLineSeparators"
+	
+	| justAnLf linesBounds |
+	linesBounds _ OrderedCollection new.
+	justAnLf _ '
+' asRope.
+	justAnLf lineIndicesDo: [ :start :endWithoutDelimiters :end |
+		linesBounds add: { start . endWithoutDelimiters. end }.
+		].
+
+	self assert: linesBounds size = 2 description: 'There should be two lines.'.
+
+	self assert: linesBounds first first = 1 description: 'First line starts at position 1'.
+	self assert: linesBounds first second = (linesBounds first first-1) description: 'First line is empty'.
+	self assert: linesBounds first third = (linesBounds first second+1) description: 'First line is terminated by ab Lf'.
+
+	self assert: linesBounds second first = ( linesBounds first third+1) description: 'Second line starts after end of first line'.
+	self assert: linesBounds second second = (linesBounds second first-1) description: 'Second line is empty'.
+	self assert: linesBounds second third = (linesBounds second second+0) description: 'Second line is not terminated by ab Lf'.! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/22/2013 19:41'!
 testMatch
@@ -3258,47 +3397,47 @@ testSubstring
 
 ! !
 
-!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 17:31'!
+!RopeTest methodsFor: 'test - converting' stamp: 'hjh 2/26/2013 09:34'!
 testTrimBoth
-	self assert: Rope emptyString trimBoth = ''.
-	self assert: ' ' asRope trimBoth = ''.
-	self assert: '	' asRope trimBoth = ''.
-	self assert: 'foo' asRope trimBoth = 'foo'.
-	self assert: ' foo ' asRope trimBoth = 'foo'.
-	self assert: '  foo  ' asRope trimBoth = 'foo'.
-	self assert: ((Rope newLineString ), '   foo  ') trimBoth = 'foo'.
+	self assert: Rope emptyString trimBoth = '' asRope.
+	self assert: ' ' asRope trimBoth = '' asRope.
+	self assert: '	' asRope trimBoth = '' asRope.
+	self assert: 'foo' asRope trimBoth = 'foo' asRope.
+	self assert: ' foo ' asRope trimBoth = 'foo' asRope.
+	self assert: '  foo  ' asRope trimBoth = 'foo' asRope.
+	self assert: ((Rope newLineString ), '   foo  ') trimBoth = 'foo' asRope.
 	
-	self assert: ('aabbaa' asRope trimBoth: [ :each | each = $a ]) = 'bb'.
-	self assert: ('bbaabb' asRope trimBoth: [ :each | each = $a ]) = 'bbaabb'! !
+	self assert: ('aabbaa' asRope trimBoth: [ :each | each = $a ]) = 'bb' asRope.
+	self assert: ('bbaabb' asRope trimBoth: [ :each | each = $a ]) = 'bbaabb' asRope! !
 
-!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 17:31'!
+!RopeTest methodsFor: 'test - converting' stamp: 'hjh 2/26/2013 09:34'!
 testTrimLeft
-	self assert: Rope emptyString trimLeft = ''.
-	self assert: ' ' asRope trimLeft = ''.
-	self assert: '	' asRope trimLeft = ''.
-	self assert: 'foo' asRope trimLeft = 'foo'.
-	self assert: ' foo ' asRope trimLeft = 'foo '.
-	self assert: '  foo  ' asRope trimLeft = 'foo  '.
+	self assert: Rope emptyString trimLeft = '' asRope.
+	self assert: ' ' asRope trimLeft = '' asRope.
+	self assert: '	' asRope trimLeft = '' asRope.
+	self assert: 'foo' asRope trimLeft = 'foo' asRope.
+	self assert: ' foo ' asRope trimLeft = 'foo ' asRope.
+	self assert: '  foo  ' asRope trimLeft = 'foo  ' asRope.
 	
-	self assert: ('aabbaa' asRope trimLeft: [ :each | each = $a ]) = 'bbaa'.
-	self assert: ('bbaabb' asRope trimLeft: [ :each | each = $a ]) = 'bbaabb'! !
+	self assert: ('aabbaa' asRope trimLeft: [ :each | each = $a ]) = 'bbaa' asRope.
+	self assert: ('bbaabb' asRope trimLeft: [ :each | each = $a ]) = 'bbaabb' asRope! !
 
-!RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 20:49'!
+!RopeTest methodsFor: 'test - converting' stamp: 'hjh 2/26/2013 09:33'!
 testTrimRight
-	self assert: '' asRope trimRight = ''.
-	self assert: ' ' asRope trimRight = ''.
-	self assert: '	' asRope trimRight = ''.
-	self assert: 'foo' asRope trimRight = 'foo'.
-	self assert: ' foo ' asRope trimRight = ' foo'.
-	self assert: '  foo  ' asRope trimRight = '  foo'.
+	self assert: '' asRope trimRight = '' asRope.
+	self assert: ' ' asRope trimRight = '' asRope.
+	self assert: '	' asRope trimRight = '' asRope.
+	self assert: 'foo' asRope trimRight = 'foo' asRope.
+	self assert: ' foo ' asRope trimRight = ' foo' asRope.
+	self assert: '  foo  ' asRope trimRight = '  foo' asRope.
 	
-	self assert: ('aabbaa' asRope trimRight: [ :each | each = $a ]) = 'aabb'.
-	self assert: ('bbaabb' asRope trimRight: [ :each | each = $a ]) = 'bbaabb'.
-	self assert: (  ' abc  d   ' asRope withoutTrailingBlanks = ' abc  d' ). ! !
+	self assert: ('aabbaa' asRope trimRight: [ :each | each = $a ]) = 'aabb' asRope.
+	self assert: ('bbaabb' asRope trimRight: [ :each | each = $a ]) = 'bbaabb' asRope.
+	self assert: (  ' abc  d   ' asRope withoutTrailingBlanks = ' abc  d' asRope). ! !
 
-!RopeTest methodsFor: 'test - copy' stamp: 'KenD 2/23/2013 19:08'!
+!RopeTest methodsFor: 'test - copy' stamp: 'hjh 2/26/2013 09:32'!
 testTrimmed
-	self assert: '  a  ' asRope trimBoth = 'a'. ! !
+	self assert: '  a  ' asRope trimBoth = 'a' asRope. ! !
 
 !RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 18:34'!
 testUpTo
