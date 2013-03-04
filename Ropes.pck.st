@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1616] on 26 February 2013 at 9:42:42 am'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1616] on 4 March 2013 at 1:49:04 am'!
 'Description Ropes: functional, immutable strings'!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -2897,6 +2897,26 @@ testIterationTime
 	
 	
 ! !
+
+!RopePerformanceTest methodsFor: 'performance' stamp: 'hjh 3/4/2013 01:48'!
+testWriteStreamOnRope
+	"self new testWriteStreamOnRope"
+
+  	| ws ropeResult stringResult |
+	
+	Transcript newLine.
+	stringResult := '#nextPutAll: for Strings: ',  
+		[ws := WriteStream on: String  new.
+      	1 to: 100000 do: [ :i | ws nextPutAll: i asString]] timeToRun asString, 'ms', String newLineString.
+	Transcript show: stringResult. 
+	
+	ropeResult := '#nextPutAll: for Ropes: ',  
+		[ws := WriteStream on: Rope new.
+      	1 to: 100000 do: [ :i | ws nextPutAll: i asRope]] timeToRun asString, 'ms', Rope  newLineString.
+	Transcript show: ropeResult. Transcript newLine.
+	.
+
+	! !
 
 !RopeTest methodsFor: 'initialize-release' stamp: 'KenD 2/23/2013 19:14'!
 setUp
