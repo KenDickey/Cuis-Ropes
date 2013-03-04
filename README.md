@@ -28,14 +28,14 @@ delegates the message to a its stringRepresentation.
 
 To load the package
 
-
+````Smalltalk
     | slash |
     slash := FileDirectory slash.
     CodePackageFile installPackageStream:
         (FileStream concreteStream readOnlyFileNamed: 
             '..', slash, 'Cuis-Ropes', slash, 'Ropes.pck.st'
         )
-
+````
 
 ### Example application		
 
