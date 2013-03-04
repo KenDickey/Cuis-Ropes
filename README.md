@@ -41,8 +41,9 @@ To load the package
 
 To see how a text editor copes with Rope execute
 
+````Smalltalk
     Rope openTextEditor.
-	
+````    
 	
 ### References
 
