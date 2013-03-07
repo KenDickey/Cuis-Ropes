@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1616] on 4 March 2013 at 1:49:04 am'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1626] on 6 March 2013 at 5:25:25 pm'!
 'Description Ropes: functional, immutable strings'!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -48,6 +48,16 @@ TestCase subclass: #RopeTest
 	category: 'Ropes'!
 !classDefinition: 'RopeTest class' category: #Ropes!
 RopeTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #RopeWrapper category: #Ropes!
+Object subclass: #RopeWrapper
+	instanceVariableNames: 'theRope'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Ropes'!
+!classDefinition: 'RopeWrapper class' category: #Ropes!
+RopeWrapper class
 	instanceVariableNames: ''!
 
 !classDefinition: #SubRope category: #Ropes!
@@ -101,6 +111,15 @@ Performance Tests for Ropes!
 
 !RopeTest commentStamp: '<historical>' prior: 0!
 Test cases for Ropes!
+
+!RopeWrapper commentStamp: '<historical>' prior: 0!
+Simple wrapper to allow code which expects identity when things are mutated.
+
+Ropes are immutable.
+
+Actual operations on Ropes yield new ropes.
+
+A RopeWrapper just keeps the result of the last operation on a rope.!
 
 !SubRope commentStamp: '<historical>' prior: 0!
 I refer to an immutable string shared with another Rope.!
@@ -270,6 +289,12 @@ meldThreshold
 
 	^MeldThreshold ! !
 
+!ConcatRope class methodsFor: 'instance creation' stamp: 'KenD 3/6/2013 17:15'!
+with:  aRope with: otherRope
+	"Answer a new ConcatRope"
+
+	^ self concatenate: aRope with: otherRope ! !
+
 !FlatRope methodsFor: 'accessing' stamp: 'KenD 2/8/2013 16:45'!
 at: anIndex
 	
@@ -362,6 +387,12 @@ fromString: aString
 
 	^(self new initialize with: aString copy;
 	   yourself)! !
+
+!Object methodsFor: '*ropes' stamp: 'KenD 3/5/2013 21:43'!
+asRope
+	"Answer a string that represents the receiver."
+
+	^ self printString asRope! !
 
 !Rope methodsFor: 'copying' stamp: 'KenD 2/9/2013 19:55'!
 , aRopeOrString
@@ -788,11 +819,11 @@ at: index put: aCharacter
 
 	self subclassResponsibility ! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:33'!
+!Rope methodsFor: 'converting' stamp: 'KenD 3/5/2013 21:38'!
 base64Decoded
 	"Decode the receiver from base 64"
 	"'SGVsbG8gV29ybGQ=' base64Decoded"
-	^(Base64MimeConverter mimeDecode: self as: self class)! !
+	^(Base64MimeConverter mimeDecode: self as: String) asRope! !
 
 !Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:32'!
 base64Encoded
@@ -924,6 +955,11 @@ contractTo: smallSize
 	(self size < smallSize)
 	ifTrue: [ ^self ]
 	ifFalse: [ ^ (self copyFrom: 1 to: smallSize) , (Rope  fromString: '...') ]! !
+
+!Rope methodsFor: 'copying' stamp: 'KenD 3/5/2013 21:55'!
+copyFrom: start to: stop
+
+	self subclassResponsibility ! !
 
 !Rope methodsFor: 'copying' stamp: 'KenD 2/11/2013 18:47'!
 copyReplaceFrom: start to: stop with: ropeOrString
@@ -1783,6 +1819,16 @@ match: text
 (Rope fromString: '*foo#zort'')	match: 'afoo3zortthenfoo3zort' true
 (Rope fromString: '*foo*zort'')	match: 'afoodezortorfoo3zort' true
 "! !
+
+!Rope methodsFor: 'stream support' stamp: 'KenD 3/6/2013 08:35'!
+nextPut: aThing
+
+	^ self , (aThing asRope)! !
+
+!Rope methodsFor: 'stream support' stamp: 'KenD 3/6/2013 08:35'!
+nextPutAll: aCollection
+
+	^ self , (aCollection as: Rope)! !
 
 !Rope methodsFor: 'accessing' stamp: 'KenD 2/23/2013 16:53'!
 numArgs 
@@ -2863,6 +2909,33 @@ testConcatTime
 	
 	! !
 
+!RopePerformanceTest methodsFor: 'performance' stamp: 'KenD 3/6/2013 08:23'!
+testInjectIntoRope
+	"self new testInjectOnRope"
+
+  	| ropeResult stringResult |
+	
+	Transcript newLine.
+	ropeResult := '#inject:into: for Ropes: ' asRope,  
+		([(1 to: 10000) inject: (Rope new) into: [ :left :right | left , right asRope ]] 
+			timeToRun asRope), 
+		'ms' asRope, 
+		Rope  newLineString.
+	Transcript show: ropeResult. Transcript newLine.
+
+	stringResult := 
+		'#inject:into: for Strings: ',  
+		([ (1 to: 10000) inject: (String new) into: [ :left :right | left , right asString ]]
+			 timeToRun asString), 
+		'ms', 
+		String newLineString.
+	Transcript show: stringResult. 
+
+	Transcript newLine.	
+	.
+
+	! !
+
 !RopePerformanceTest methodsFor: 'performance' stamp: 'KenD 2/22/2013 19:43'!
 testIterationTime
 	"self new testIterationTime"
@@ -2898,7 +2971,7 @@ testIterationTime
 	
 ! !
 
-!RopePerformanceTest methodsFor: 'performance' stamp: 'hjh 3/4/2013 01:48'!
+!RopePerformanceTest methodsFor: 'performance' stamp: 'KenD 3/6/2013 17:25'!
 testWriteStreamOnRope
 	"self new testWriteStreamOnRope"
 
@@ -2909,12 +2982,15 @@ testWriteStreamOnRope
 		[ws := WriteStream on: String  new.
       	1 to: 100000 do: [ :i | ws nextPutAll: i asString]] timeToRun asString, 'ms', String newLineString.
 	Transcript show: stringResult. 
-	
-	ropeResult := '#nextPutAll: for Ropes: ',  
-		[ws := WriteStream on: Rope new.
-      	1 to: 100000 do: [ :i | ws nextPutAll: i asRope]] timeToRun asString, 'ms', Rope  newLineString.
+
+	Transcript newLine.	
+	"@@FIXME: Immutable objects don't make good  WriteStreams"
+	ropeResult := 'FIXME: #nextPutAll: for Ropes: ' asRope,  
+		[ws := "WriteStream on:" Rope  new.
+      	1 to: 100000 do: [ :i | ws nextPutAll: i asRope]] timeToRun asRope, 'ms', Rope  newLineString.
+	ws inspect.
 	Transcript show: ropeResult. Transcript newLine.
-	.
+
 
 	! !
 
@@ -3511,6 +3587,40 @@ testindexOfstartingAt
 
 	self assert: ('aa aa éé aa aa' asRope indexOf: $a startingAt: 8) = 12.
 	self assert: ('aa aa éé aa aa' asRope indexOf: $z startingAt: 8) = 0.! !
+
+!RopeWrapper methodsFor: 'conversion' stamp: 'KenD 3/6/2013 17:18'!
+asRope
+
+	^ theRope! !
+
+!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/6/2013 17:11'!
+doesNotUnderstand: aMessage
+	"Delegate operations to theRope and Answer the result.
+	Ir a result is a new rope, remember that as theRope"
+
+	| result |
+	result := aMessage sendTo: theRope.
+	(result isKindOf: Rope)
+	ifTrue: [ theRope := result ].
+	
+	^ result! !
+
+!RopeWrapper methodsFor: 'initialize-release' stamp: 'KenD 3/6/2013 17:17'!
+initialize
+
+	"default"
+	theRope := Rope emptyString.! !
+
+!RopeWrapper methodsFor: 'initialize-release' stamp: 'KenD 3/6/2013 17:14'!
+with: aRope
+	"Initialize theRope"
+
+	theRope := aRope! !
+
+!RopeWrapper class methodsFor: 'instance creation' stamp: 'KenD 3/6/2013 17:13'!
+with: aThing
+
+	^ self basicNew with:( aThing asRope)! !
 
 !String methodsFor: '*ropes' stamp: 'KenD 2/9/2013 19:48'!
 asRope
