@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1626] on 6 March 2013 at 5:25:25 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1626] on 14 March 2013 at 8:23:06 pm'!
 'Description Ropes: functional, immutable strings'!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -119,7 +119,16 @@ Ropes are immutable.
 
 Actual operations on Ropes yield new ropes.
 
-A RopeWrapper just keeps the result of the last operation on a rope.!
+A RopeWrapper just keeps the result of the last operation on a rope.
+
+See use of #nextPut: in RopeTest>>testWrapper
+
+Use in place of WriteStream for #nextPut: and #nextPutAll.
+  i.e. 
+	RopeWrapper with: ('abc' asRope).
+ vs:
+	WriteStream on: 'abc',
+!
 
 !SubRope commentStamp: '<historical>' prior: 0!
 I refer to an immutable string shared with another Rope.!
@@ -1929,15 +1938,15 @@ print
 
 	Transcript show: self; newLine! !
 
-!Rope methodsFor: 'printing' stamp: 'KenD 2/23/2013 14:10'!
+!Rope methodsFor: 'printing' stamp: 'KenD 3/14/2013 19:52'!
 printOn: aStream
 	"Look good in the inspector"
 
-	aStream nextPutAll: 'Rope('''. "??self class printOn:??"
+"	aStream nextPut: $'. "
 	self do: [ :char  |
 		aStream nextPut: char.
 		char == $'  ifTrue: [aStream nextPut: char]].
-	aStream nextPutAll:''')'! !
+"	aStream nextPut: $'."! !
 
 !Rope methodsFor: 'printing' stamp: 'KenD 2/10/2013 19:56'!
 printString
@@ -1965,14 +1974,15 @@ rebalance
 	].
 	^ Rope merge: leafNodes start: 1 end: (leafNodes size).! !
 
-!Rope methodsFor: 'private' stamp: 'KenD 2/22/2013 20:46'!
+!Rope methodsFor: 'private' stamp: 'KenD 3/14/2013 20:20'!
 replaceFrom: start to: stop with: replacement startingAt: repStart 
 		"Answer a new rope with the replacement.
 		Nota Bene: The String method with this name is destructive!!!!"
 		| repRope |
 		repRope := replacement asRope.
 		
-		self halt: 'The String method with this name is destructive. The Rope version is not,'.
+		self halt: 
+	'The String method with this name is destructive. The Rope version is not, Use RopeWrapper'.
 		
 		^ self copyReplaceFrom: start to: stop with: (repRope copyFrom: repStart to: (repRope size)).! !
 
@@ -2909,7 +2919,7 @@ testConcatTime
 	
 	! !
 
-!RopePerformanceTest methodsFor: 'performance' stamp: 'KenD 3/6/2013 08:23'!
+!RopePerformanceTest methodsFor: 'performance' stamp: 'KenD 3/14/2013 20:02'!
 testInjectIntoRope
 	"self new testInjectOnRope"
 
@@ -2918,6 +2928,13 @@ testInjectIntoRope
 	Transcript newLine.
 	ropeResult := '#inject:into: for Ropes: ' asRope,  
 		([(1 to: 10000) inject: (Rope new) into: [ :left :right | left , right asRope ]] 
+			timeToRun asRope), 
+		'ms' asRope, 
+		Rope  newLineString.
+	Transcript show: ropeResult. Transcript newLine.
+
+	ropeResult := '#inject:into: for RopeWrapper: ' asRope,  
+		([(1 to: 10000) inject: (RopeWrapper new) into: [ :left :right | left , right asRope ]] 
 			timeToRun asRope), 
 		'ms' asRope, 
 		Rope  newLineString.
@@ -2971,7 +2988,7 @@ testIterationTime
 	
 ! !
 
-!RopePerformanceTest methodsFor: 'performance' stamp: 'KenD 3/6/2013 17:25'!
+!RopePerformanceTest methodsFor: 'performance' stamp: 'KenD 3/14/2013 20:13'!
 testWriteStreamOnRope
 	"self new testWriteStreamOnRope"
 
@@ -2984,14 +3001,18 @@ testWriteStreamOnRope
 	Transcript show: stringResult. 
 
 	Transcript newLine.	
-	"@@FIXME: Immutable objects don't make good  WriteStreams"
-	ropeResult := 'FIXME: #nextPutAll: for Ropes: ' asRope,  
-		[ws := "WriteStream on:" Rope  new.
+	ropeResult := '#nextPutAll: for Ropes: ' asRope,  
+		[ws := Rope  new.
       	1 to: 100000 do: [ :i | ws nextPutAll: i asRope]] timeToRun asRope, 'ms', Rope  newLineString.
-	ws inspect.
 	Transcript show: ropeResult. Transcript newLine.
 
-
+	"The run time for the following is really dreadful!!"
+	
+"	ropeResult := '#nextPutAll: for RopeWrapper: ' asRope,  
+		[ws :=RopeWrapper  new.
+      	1 to: 100000 do: [ :i | ws nextPutAll: i asRope]] timeToRun asRope, 'ms', Rope  newLineString.
+	Transcript show: ropeResult. Transcript newLine.
+"
 	! !
 
 !RopeTest methodsFor: 'initialize-release' stamp: 'KenD 2/23/2013 19:14'!
@@ -3400,7 +3421,7 @@ testPadRightToWith
 	self assert: (aRope padRightTo: 1 with: $#) equals: aRope. 
 	self assert: (aRope padRightTo: 0 with: $#) equals: aRope.! !
 
-!RopeTest methodsFor: 'testing' stamp: 'KenD 2/10/2013 20:12'!
+!RopeTest methodsFor: 'testing' stamp: 'KenD 3/14/2013 19:48'!
 testPrint
 	"What does it look like?"
 
@@ -3411,12 +3432,12 @@ testPrint
 				 'abcd5678hijk new string tailabcd5678hijk new string tail').
 	self assert: ((concRope3 asString) =  'Now is the time abcd5678hijk').
 	
-	self assert: ((flatRope printString) =  'Rope(''1234abcd5678hijk90lm'')' ).
-	self assert: ((subRope printString) =  'Rope(''abcd5678hijk'')' ).
-	self assert: ((concRope1 printString) =  'Rope(''abcd5678hijk new string tail'')' ).
+	self assert: ((flatRope printString) =  '1234abcd5678hijk90lm' ).
+	self assert: ((subRope printString) =  'abcd5678hijk' ).
+	self assert: ((concRope1 printString) =  'abcd5678hijk new string tail' ).
 	self assert: ((concRope2 printString) =
-				  'Rope(''abcd5678hijk new string tailabcd5678hijk new string tail'')' ).
-	self assert: ((concRope3 printString) =  'Rope(''Now is the time abcd5678hijk'')').
+				  'abcd5678hijk new string tailabcd5678hijk new string tail' ).
+	self assert: ((concRope3 printString) =  'Now is the time abcd5678hijk').
 ! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/15/2013 21:05'!
@@ -3582,6 +3603,17 @@ testWithoutTrailingDigits
 
 ! !
 
+!RopeTest methodsFor: 'testing' stamp: 'KenD 3/14/2013 19:55'!
+testWrap
+	
+	| wrapper |
+	wrapper := RopeWrapper with: ('Test me ' asRope).
+	wrapper nextPut: 'more and better.'.
+	self assert: (wrapper printString  = 'Test me more and better.' ).
+	wrapper nextPutAll: #( $f $u $n).
+	self assert:  (wrapper printString  =  'Test me more and better.fun').
+	! !
+
 !RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 17:22'!
 testindexOfstartingAt
 
@@ -3610,6 +3642,22 @@ initialize
 
 	"default"
 	theRope := Rope emptyString.! !
+
+!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/14/2013 19:43'!
+printString
+
+	^theRope printString! !
+
+!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/14/2013 20:23'!
+replaceFrom: start to: stop with: replacement startingAt: repStart 
+		"Answer a new rope with the replacement.
+		Nota Bene: The String method with this name is destructive!!"
+		| repRope |
+		repRope := replacement asRope.
+
+	theRope := theRope copyReplaceFrom: start to: stop with: (repRope copyFrom: repStart to: (repRope size)).
+	
+	^theRope! !
 
 !RopeWrapper methodsFor: 'initialize-release' stamp: 'KenD 3/6/2013 17:14'!
 with: aRope
