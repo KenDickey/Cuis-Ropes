@@ -22,6 +22,30 @@ The following operations are algorithmically faster in ropes
 If a Rope doesNotUnderstand, it prints the message to the transcript and
 delegates the message to a its stringRepresentation.
 
+Currently, most of the String protocol is implemented, so Ropes should be quite useful.
+
+Note that NEW ropes are returned from operations but the original is unaffected.
+Use a RopeWrapper if you need it.
+
+I.e. use
+	RopeWrapper with: Rope new.
+rather than
+	WriteStream on: String new.
+
+````Smalltalk
+r := Rope new.
+r nextPut: 'test '; nextPut: 'me.'.
+r printString. " --> ''  "
+
+r := RopeWrapper new.
+r nextPut: 'test '; nextPut: 'me.'.
+r printString. " --> 'test me.'  "
+
+r := Rope new .
+r := r nextPut: 'test '.
+r := r nextPut: 'me.'.
+r printString. " --> 'test me.'  "
+````
 
 
 ### Installation
@@ -43,6 +67,7 @@ To see how a text editor copes with Rope execute
 
 ````Smalltalk
     Rope openTextEditor.
+    'Some little test string.' asRope edit.
 ````    
 	
 ### References
