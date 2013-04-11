@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1626] on 14 March 2013 at 8:23:06 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1626] on 11 April 2013 at 1:08 pm'!
 'Description Ropes: functional, immutable strings'!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -1953,7 +1953,7 @@ printString
 
 	^String streamContents: [:s | self printOn: s]! !
 
-!Rope methodsFor: 'private' stamp: 'KenD 2/13/2013 15:49'!
+!Rope methodsFor: 'private' stamp: 'KenD 4/11/2013 13:05'!
 rebalance
 	"Answer a new balanced rope with my data"
 
@@ -1967,8 +1967,8 @@ rebalance
 		node := toExamine removeFirst.
 		(node class == ConcatRope)
 		ifTrue: [
-			toExamine addLast: node rightRope.
-			toExamine addLast: node leftRope
+			toExamine addFirst: node rightRope.
+			toExamine addFirst: node leftRope
 		]
 		ifFalse: [leafNodes addLast: node]
 	].
@@ -2775,23 +2775,23 @@ maxRopeDepth
 "
 	^MaxRopeDepth ! !
 
-!Rope class methodsFor: 'private' stamp: 'KenD 2/12/2013 18:28'!
+!Rope class methodsFor: 'private' stamp: 'KenD 4/11/2013 13:06'!
 merge: leafNodes start: start end: end
 	"Answer a balanced rope based on data from Rope\>>rebalance"
 
 	| range middle |
 	range := end - start.
 	
-	(range = 1)
+	(range = 0)
 	ifTrue: [^ leafNodes at: start].
 	
-	(range = 2)
+	(range = 1)
 	ifTrue: [^ (leafNodes at: start) , (leafNodes at: (start + 1)) ].
 	
-	middle := start + (range // 2).
+	middle := start + (range quo: 2).
 	
 	^ (self merge: leafNodes start: start end: middle ) ,
-	   (self merge: leafNodes start: middle end: end)
+	   (self merge: leafNodes start: middle + 1 end: end)
 	! !
 
 !Rope class methodsFor: 'instance creation' stamp: 'KenD 2/25/2013 14:11'!
@@ -3440,7 +3440,7 @@ testPrint
 	self assert: ((concRope3 printString) =  'Now is the time abcd5678hijk').
 ! !
 
-!RopeTest methodsFor: 'testing' stamp: 'KenD 2/15/2013 21:05'!
+!RopeTest methodsFor: 'testing' stamp: 'KenD 4/11/2013 13:07'!
 testRebalance
 
 	| fr1 fr2 t1 t2 |
@@ -3451,8 +3451,11 @@ testRebalance
 
 	self assert: ( t1 depth = 7 ).
 	self assert: ( t1 rebalance depth = 3 ).
+	self assert: ( t1 rebalance = t1 ).
 	self assert: ( t2 depth = 11 ).
-	self assert: ( t2 rebalance depth = 4 ).! !
+	self assert: ( t2 rebalance depth = 4 ).
+	self assert: ( t2 rebalance = t2).
+	! !
 
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/23/2013 17:39'!
 testSpace
