@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1626] on 11 April 2013 at 1:08 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1626] on 22 April 2013 at 8:27:16 pm'!
 'Description Ropes: functional, immutable strings'!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -28,6 +28,26 @@ Rope subclass: #FlatRope
 	category: 'Ropes'!
 !classDefinition: 'FlatRope class' category: #Ropes!
 FlatRope class
+	instanceVariableNames: ''!
+
+!classDefinition: #LazyFileRope category: #Ropes!
+Rope subclass: #LazyFileRope
+	instanceVariableNames: 'soFar fileStream fileName totalCount'
+	classVariableNames: 'ChunkSize'
+	poolDictionaries: ''
+	category: 'Ropes'!
+!classDefinition: 'LazyFileRope class' category: #Ropes!
+LazyFileRope class
+	instanceVariableNames: ''!
+
+!classDefinition: #RepeatedCharRope category: #Ropes!
+Rope subclass: #RepeatedCharRope
+	instanceVariableNames: 'char count'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Ropes'!
+!classDefinition: 'RepeatedCharRope class' category: #Ropes!
+RepeatedCharRope class
 	instanceVariableNames: ''!
 
 !classDefinition: #RopePerformanceTest category: #Ropes!
@@ -76,6 +96,17 @@ I am the concatenation of two other ropes.!
 
 !FlatRope commentStamp: '<historical>' prior: 0!
 A flat rope is basically a string.  It is a "leaf".!
+
+!LazyFileRope commentStamp: '<historical>' prior: 0!
+I am a Rope which reads from a file as required to satisfy requests.
+
+soFar is a Rope read so far.  The rest comes from fileStream.
+
+I try to read ChunkSize characters when possible to satisfy a request.!
+
+!RepeatedCharRope commentStamp: '<historical>' prior: 0!
+I am a Rope consisting of a single char repeated count times.
+!
 
 !Rope commentStamp: '<historical>' prior: 0!
 I am the abstract class of immutable strings known as Ropes.
@@ -397,11 +428,309 @@ fromString: aString
 	^(self new initialize with: aString copy;
 	   yourself)! !
 
+!LazyFileRope methodsFor: 'accessing' stamp: 'KenD 4/22/2013 19:31'!
+at: anIndex
+	"Read as much as is required to satisfy the request.  Answer a Rope"
+	
+	self extendForIndex: anIndex.
+	^ (soFar at: anIndex)! !
+
+!LazyFileRope methodsFor: 'accessing' stamp: 'KenD 4/22/2013 19:31'!
+at: anIndex put: aChar
+	"Read as much as is required to satisfy the request.  Answer a Rope"
+	
+	self extendForIndex: anIndex.
+	^ (soFar at: anIndex put: aChar asCharacter)! !
+
+!LazyFileRope methodsFor: 'enumerating' stamp: 'KenD 4/22/2013 19:36'!
+collect: aBlock
+	"Evaluate aBlock with each of the receiver's elements as the argument. 
+	Collect the resulting values into a collection like the receiver. Answer 
+	the new collection."
+
+	self readEntireContents.
+	^ soFar collect: aBlock! !
+
+!LazyFileRope methodsFor: 'copying' stamp: 'KenD 4/22/2013 19:46'!
+copyFrom: start to: stop 
+	"Answer a UniString."
+	
+	"Handle odd case the same way as OrderedCollection"
+	(stop < start) ifTrue: [^ '' asRope ].
+
+	self extendForIndex: stop.
+	
+	^ soFar copyFrom: start to: stop! !
+
+!LazyFileRope methodsFor: 'accessing' stamp: 'KenD 4/22/2013 19:31'!
+depth
+	"I cannot be rebalanced"
+	
+	^ 0! !
+
+!LazyFileRope methodsFor: 'enumerating' stamp: 'KenD 4/22/2013 19:36'!
+do: aBlock
+	"aBlock takes each UniChar in me as an argument"
+
+	self readEntireContents.
+	^ soFar do: aBlock! !
+
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:48'!
+extendForIndex: anIndex
+	"If (anIndex > soFar size),  Extend soFar to include anIndex"
+"
+Transcript log: 'LazyFileRope>>extendForIndex: ',
+				(anIndex  asString), '  ', (soFar size) asString ,
+  				String newLineString.
+"			
+	(anIndex > (soFar size)) ifTrue: [ | delta |
+		delta := anIndex - (soFar size).
+		(delta < ChunkSize)
+			ifTrue: [ soFar := soFar , (fileStream next: ChunkSize) asRope ]
+			ifFalse: [ soFar := soFar , (fileStream next: (delta + 100)) asRope ].
+		self fileCheck.
+	]! !
+
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:21'!
+fileCheck
+	"Close and remove tempFile if all characters consumed"
+"
+Transcript log: 'LazyFileRope>>fileCheck  closed? >> ',
+				(uniFileStream closed asString),
+  				String newLineString.
+"			
+	((fileStream closed not) and: [fileStream atEnd])
+		 ifTrue: [ self fileCleanup ]! !
+
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:21'!
+fileCleanup
+	"Close and remove tempFile"
+
+	 | fileName |
+	fileName := fileStream name.
+	fileStream close.
+	FileDirectory deleteFilePath: fileName.! !
+
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:21'!
+finalize
+
+	super finalize.
+	self fileCleanup.
+	! !
+
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:22'!
+genTempFileName
+	"Answer the name of a file which is different than one that exists"
+	
+	"@@FIXME: Use /tmp on Unix, ??? on Windows"
+	
+	| dir looking rand fileName |
+	
+	looking := true.
+	dir := FileDirectory default.
+	[looking] whileTrue: [
+		 rand := 777 atRandom: (Random new initialize).
+ 		 fileName := 'tmp' , rand asString.
+ 		 looking := dir fileExists: fileName.
+	].
+	^ fileName
+! !
+
+!LazyFileRope methodsFor: 'initialize-release' stamp: 'KenD 4/22/2013 19:37'!
+initializeFromFile: aName
+	
+	| tmpFileName |
+	super initialize.
+	"As Ropes are immutable, copy the file"
+	tmpFileName := self genTempFileName.
+	FileDirectory default copyFileNamed: aName toFileNamed: tmpFileName.
+	
+	"Open a FileStream on the copy"
+	fileName := aName.
+	totalCount := nil.
+	fileStream := FileStream readOnlyFileNamed: tmpFileName.
+	soFar := (fileStream next: ChunkSize) asRope..
+	
+	^self
+	! !
+
+!LazyFileRope methodsFor: 'printing' stamp: 'KenD 4/22/2013 19:19'!
+printOn: aStream 
+	"Look good in the inspector"
+
+	aStream nextPutAll: 'LazyFileRope(''' , fileName , ''')'
+	! !
+
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:22'!
+readEntireContents
+	"Enumerators process the entire range of characters"
+"
+Transcript log: 'LazyFileRope>>readEntireContents closed? >> ',
+				(fileStream closed asString),
+  				String newLineString.
+"
+	(fileStream closed) ifFalse: [ 
+		soFar := soFar , (fileStream upToEnd).
+		self fileCleanup.
+	].
+	(totalCount isNil) ifFalse: [ totalCount := soFar size ]! !
+
+!LazyFileRope methodsFor: 'enumerating' stamp: 'KenD 4/22/2013 19:36'!
+select: aBlock
+	"Refer to the comment in Collection>>select:."
+
+	self readEntireContents.
+	^ soFar select: aBlock! !
+
+!LazyFileRope methodsFor: 'accessing' stamp: 'KenD 4/22/2013 19:35'!
+size
+	"Answer the niumber of Characters in me"
+
+	(totalCount isNil) ifFalse: [ ^totalCount ].
+	(fileStream closed) 
+		ifTrue: [  ^totalCount := soFar size ]
+		ifFalse: [ ^totalCount := fileStream size ]
+! !
+
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:23'!
+soFar
+	"Debug only"
+	^soFar! !
+
+!LazyFileRope class methodsFor: 'class initialization' stamp: 'KenD 4/22/2013 19:38'!
+initialize
+"
+	LazyFileRope initialize.
+"
+	ChunkSize := 1024.
+	! !
+
+!LazyFileRope class methodsFor: 'instance creation' stamp: 'KenD 4/22/2013 19:44'!
+onFileNamed: aName
+	"Answer a new instance of me"
+"
+	(LazyFileString onFileNamed: 'test.txt') inspect.
+"
+	 | dirEntry |
+	(FileDirectory default fileExists: aName)
+		ifFalse: [ ^ self error: 'Failed to find file ' , aName ].
+
+	dirEntry := FileDirectory directoryEntryFor: aName.
+	(dirEntry isDirectory) 
+		ifTrue: [ ^self error: 'Not a text file: ' , aName ].
+		
+	((dirEntry fileSize) < ChunkSize)
+	ifFalse: [ ^ self new initializeFromFile: aName ]
+	ifTrue: [ | fileStream result |  "Too small to bother with"
+		fileStream := FileStream readOnlyFileNamed: aName.
+		 result := fileStream contentsOfEntireFile.
+		^ result asRope
+	 ]
+
+	! !
+
 !Object methodsFor: '*ropes' stamp: 'KenD 3/5/2013 21:43'!
 asRope
 	"Answer a string that represents the receiver."
 
 	^ self printString asRope! !
+
+!RepeatedCharRope methodsFor: 'accessing' stamp: 'KenD 4/22/2013 19:09'!
+at: anIndex
+
+	self checkIndex: anIndex.
+	
+	^char! !
+
+!RepeatedCharRope methodsFor: 'accessing' stamp: 'KenD 4/22/2013 19:10'!
+at: index put: aCharacter 
+	"Answer a new UniString"
+	
+	self checkIndex: index.
+	(self size = 1)
+	ifTrue: [ ^ aCharacter asRope ].
+	
+	(index = 1)
+	ifTrue: [ ^ (aCharacter asRope , (self copyFrom: 2 to: self size))].
+	
+	(index = self size)
+	ifTrue: [ ^ (self copyFrom: 1 to: (self size - 1)) , aCharacter asRope ].
+	
+	^ (self copyFrom: 1 to: (index - 1)) ,
+	   aCharacter asRope ,
+	   (self copyFrom: (index + 1) to: (self size))! !
+
+!RepeatedCharRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:09'!
+checkIndex: anIndex
+
+	(anIndex < 1 or: [anIndex > count])
+	ifTrue: [ self error: 'Index out of range ' , (anIndex asString)]! !
+
+!RepeatedCharRope methodsFor: 'copying' stamp: 'KenD 4/22/2013 19:13'!
+copyFrom: start to: stop 
+	"Answer a UniString."
+
+	"Handle odd case the same way as OrderedCollection"
+	(stop < start) ifTrue: [^ Rope emptyString ].
+	
+	self checkIndex: start.
+	self checkIndex: stop.
+
+	^ RepeatedCharRope withChar: char repeatCount: (stop - start + 1)! !
+
+!RepeatedCharRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:09'!
+depth
+	"I am a leaf"
+	
+	^ 0! !
+
+!RepeatedCharRope methodsFor: 'enumerating' stamp: 'KenD 4/22/2013 19:13'!
+do: aBlock
+	"aBlock takes each codePoint in me as an argument"
+
+	(1 to: count) do: [ :ignore | aBlock value: char].! !
+
+!RepeatedCharRope methodsFor: 'initialize-release' stamp: 'KenD 4/22/2013 19:14'!
+initialize
+
+	super initialize.
+	char := Character space.
+	count := 0. "Empty"! !
+
+!RepeatedCharRope methodsFor: 'accessing' stamp: 'KenD 4/22/2013 19:11'!
+size
+	
+	^count! !
+
+!RepeatedCharRope methodsFor: 'copying' stamp: 'KenD 4/22/2013 19:14'!
+substringFrom: startIndex length: numChars
+	"Answer a UniString."
+	
+	self checkIndex: startIndex.
+	self checkIndex: (startIndex + numChars - 1).
+
+	^ RepeatedCharRope withChar: char repeatCount: numChars! !
+
+!RepeatedCharRope methodsFor: 'initialize-release' stamp: 'KenD 4/22/2013 19:14'!
+withChar: aChar repeatCount: repeatCount
+
+	char := aChar asCharacter.
+	count := repeatCount.! !
+
+!RepeatedCharRope class methodsFor: 'instance creation' stamp: 'KenD 4/22/2013 19:15'!
+new:  repeatCount
+
+	^ (self basicNew withChar: Character space repeatCount: repeatCount)! !
+
+!RepeatedCharRope class methodsFor: 'instance creation' stamp: 'KenD 4/22/2013 19:15'!
+ofSize: repeatCount
+
+	^ (self withChar: Character space repeatCount: repeatCount)! !
+
+!RepeatedCharRope class methodsFor: 'instance creation' stamp: 'KenD 4/22/2013 19:15'!
+withChar: aChar repeatCount: repeatCount
+
+	^ (self basicNew withChar: aChar repeatCount: repeatCount) ! !
 
 !Rope methodsFor: 'copying' stamp: 'KenD 2/9/2013 19:55'!
 , aRopeOrString
@@ -2670,9 +2999,15 @@ does: aCharacter collateBefore: otherCharacter
 	"Delegate to String"
 	^(String does: aCharacter collateBefore: otherCharacter)! !
 
-!Rope class methodsFor: 'instance creation' stamp: 'KenD 2/23/2013 13:47'!
+!Rope class methodsFor: 'instance creation' stamp: 'KenD 4/22/2013 19:48'!
+emptyRope
+	"Answer a Rope containing a empty String."
+
+	^ EmptyRope ! !
+
+!Rope class methodsFor: 'instance creation' stamp: 'KenD 4/22/2013 19:47'!
 emptyString
-	"Answer a Rope containing a single Lf character."
+	"Answer a Rope containing a empty String."
 
 	^ EmptyRope ! !
 
@@ -2837,12 +3172,12 @@ space
 
 	^ (Character space asRope )! !
 
-!Rope class methodsFor: 'as yet unclassified' stamp: 'KenD 2/21/2013 17:48'!
+!Rope class methodsFor: 'as yet unclassified' stamp: 'KenD 4/22/2013 20:26'!
 stringHash: aString initialHash: speciesHash
 
 	| aRope numChars hash low |
 
-	numChars _ aString size.
+	numChars _ (aString size) min: 20.
 	hash _ speciesHash bitAnd: 16rFFFFFFF.
 	aRope := aString asRope. "Coerce as required"
 	
@@ -3457,6 +3792,17 @@ testRebalance
 	self assert: ( t2 rebalance = t2).
 	! !
 
+!RopeTest methodsFor: 'testing' stamp: 'KenD 4/22/2013 20:17'!
+testRepeatedCharRope
+
+	| rr |
+	rr := RepeatedCharRope withChar: $c repeatCount: 12.
+	self assert: ((rr at: 5) = $c).
+	self assert: ((rr at: 12) = $c).
+	self assert: (rr size) = 12.
+	self assert: (rr = 'cccccccccccc').
+	self assert: (rr at: 6 put: $a) = 'cccccacccccc'.! !
+
 !RopeTest methodsFor: 'testing' stamp: 'KenD 2/23/2013 17:39'!
 testSpace
 	"self debug: #testSpace"
@@ -3841,4 +4187,5 @@ asTextRope
 
 	^ Text string: (self string asRope) runs:(self runs copy)! !
 ConcatRope initialize!
+LazyFileRope initialize!
 Rope initialize!
