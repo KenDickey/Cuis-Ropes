@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1626] on 23 April 2013 at 8:52:50 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1626] on 24 April 2013 at 2:05:20 pm'!
 'Description Ropes: functional, immutable strings'!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -3195,14 +3195,14 @@ newLineString
 
 	^ (Character newLineCharacter asRope )! !
 
-!Rope class methodsFor: 'user interface' stamp: 'KenD 2/21/2013 20:02'!
+!Rope class methodsFor: 'user interface' stamp: 'KenD 4/24/2013 12:28'!
 openTextEditor
 
 "
 	Rope openTextEditor.
 "
 	SystemWindow 
-		editText: (TextModel 
+		editText: (RopeTextModel 
 			withText: (
 			 	('Given enough rope' asRope) , 
 				(Rope newLineString) ,
@@ -3265,12 +3265,52 @@ value: anInteger
 
 	^ (String with: (Character value: anInteger)) asRope! !
 
+!RopeFileList methodsFor: 'private' stamp: 'KenD 4/24/2013 13:25'!
+defaultContents
+	acceptedContentsCache := (list
+		ifNil: [ acceptedContentsCache := (LazyFileRope onFileNamed: self fullName) asText ]
+		ifNotNil: [
+			(String streamContents:
+				[:s | s nextPutAll: 'NO FILE SELECTED'; newLine.
+				 s nextPutAll: '  -- Folder Summary --'; newLine.
+				 list do: [:item | s nextPutAll: item; newLine]] 
+			) asRope
+		]
+	).
+	brevityState _ #FileList.
+	^ acceptedContentsCache! !
+
 !RopeFileList methodsFor: 'file list menu' stamp: 'KenD 4/23/2013 20:25'!
 editorClass
 
 	^RopeTextEditor! !
 
-!RopeFileList methodsFor: 'private' stamp: 'KenD 4/23/2013 20:51'!
+!RopeFileList methodsFor: 'private' stamp: 'KenD 4/24/2013 13:22'!
+put: aText
+	"Private - put the supplied text onto the file"
+
+	| fileStream type |
+	((brevityState = #fullFile) or: [brevityState = #briefFile])
+	ifTrue: [fileStream := FileStream newFileNamed: self fullName.
+		Cursor write showWhile: [fileStream nextPutAll: (aText asString asString); close].
+		fileName = fileStream localName 
+			ifTrue: [ acceptedContentsCache _ aText asRope asText]  "@@@UniLazyString@@@"
+			ifFalse: [self updateFileList].		"user renamed the file"
+		^ true  "accepted"].
+
+	listIndex = 0 ifTrue:
+		[self inform: 'No fileName is selected'.
+		^ false  "failed"].
+	type _ 'These'.
+	brevityState = #briefHex ifTrue: [type _ 'Abbreviated'].
+	brevityState = #fullHex ifTrue: [type _ 'Hexadecimal'].
+	brevityState = #FileList ifTrue: [type _ 'Directory'].
+	self inform: ('{1} contents cannot
+meaningfully be saved at present.' format:{type}).
+	^ false  "failed"
+! !
+
+!RopeFileList methodsFor: 'private' stamp: 'KenD 4/24/2013 13:30'!
 readContentsBrief: ignoredBrevityFlag
 	"Read the contents of the receiver's selected file, unless it is too long.
 	  Don't create a file here.  Check if exists."
@@ -3283,7 +3323,9 @@ readContentsBrief: ignoredBrevityFlag
 
 	(acceptedContentsCache class = LazyFileRope)
 		ifTrue: [ acceptedContentsCache fileCleanup ]. "Remove old tmp file"
-		
+	
+	brevityState := #fullFile.
+	
 	^ acceptedContentsCache := (LazyFileRope onFileNamed: self fullName) asText
 	! !
 
@@ -4073,6 +4115,12 @@ cmdShortcutsSpec
 		#(		$u	#align:						'Toggle alignment')
 	)! !
 
+!RopeTextEditor class methodsFor: 'instance creation' stamp: 'KenD 4/24/2013 13:39'!
+fromUser
+	"Open a RopeTextEditor on a file the user selects or ignore."
+	
+	RopeTextModel fromUser.! !
+
 !RopeTextEditor class methodsFor: 'class initialization' stamp: 'KenD 4/23/2013 20:08'!
 initialize
 
@@ -4173,7 +4221,7 @@ refetch
 		
 	^true! !
 
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/23/2013 20:12'!
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2013 13:45'!
 saveToNewFileNotifying: aTextModelMorph
 	"Answer true if OK, else nil"
 
@@ -4185,20 +4233,20 @@ saveToNewFileNotifying: aTextModelMorph
 	
 	(dialogResult isNil)
 	ifTrue: [ ^nil ]
-	ifFalse: [ | uniFileStream  |
+	ifFalse: [ | fileStream  |
 		fileName := (dialogResult directory) fullPathFor: (dialogResult name).
-		uniFileStream := FileStream newFileNamed: fileName.
-		uniFileStream nextPutAll: self actualContents asRope; close.
+		fileStream := FileStream newFileNamed: fileName.
+		fileStream nextPutAll: (self actualContents asString asString); close.
 		timeStamp := (FileDirectory on: fileName) directoryEntry modificationDateAndTime.
 		"@@@FIXME Notify aTextModelMorph"
 		^true
 	]! !
 
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/23/2013 20:12'!
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2013 13:44'!
 saveToOldFileNotifying: aTextModelMorph
 	"Answer true if OK, else nil"
 
-	| dirEntry uniFileStream  |	
+	| dirEntry fileStream  |	
 	dirEntry :=  (FileDirectory on: fileName) directoryEntry.
 	(timeStamp = dirEntry  modificationDateAndTime) 
 	ifFalse: [
@@ -4209,8 +4257,8 @@ editing them here.  Accept anyway?' )
 		ifFalse: [ aTextModelMorph flash. ^nil ]
 	].
 					
-	uniFileStream := FileStream newFileNamed: fileName.
-	uniFileStream nextPutAll: self actualContents asRope; close.
+	fileStream := FileStream newFileNamed: fileName.
+	fileStream nextPutAll: (self actualContents asString asString); close.
 	timeStamp := (FileDirectory on: fileName) directoryEntry modificationDateAndTime.
 	"@@@FIXME Notify aTextModelMorph"
 	^true
@@ -4227,14 +4275,14 @@ fromFile: aFileName
 
 	^self new initialize fromFile: aFileName! !
 
-!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 4/23/2013 20:21'!
+!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 4/24/2013 13:35'!
 fromUser
 	"Put up a StandardFileMenu and let the user choose a file to read into me."
 	"Answer an instance of me or nil"
 "
 	RopeTextModel fromUser.
 "	
-	| dialogResult slash |
+	| dialogResult slash textModel |
 	dialogResult := (StandardFileMenu new)
 						oldFileFrom: (FileDirectory default) ;
 	 					startUpWithCaption: 'Select a UTF-8 Unicode text file'.
@@ -4243,7 +4291,15 @@ fromUser
 
 	slash := FileDirectory slash.
 
-	^self new initialize fromFile: ( (dialogResult directory fullName) , slash , (dialogResult name) )! !
+	textModel := self new initialize 
+		fromFile: ( (dialogResult directory fullName) , slash , (dialogResult name) ).
+		
+	SystemWindow 
+		editText: textModel
+			label: 'Text Editor' 
+			wrap: true.
+	
+	^ textModel! !
 
 !RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 4/23/2013 20:15'!
 openLabel: aString

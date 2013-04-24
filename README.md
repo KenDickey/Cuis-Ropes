@@ -1,22 +1,11 @@
 Cuis-Ropes
 ==========
 
-### Functional strings for Cuis
+### Functional strings for Cui
 
-Ropes are a high-level representation of text that offers 
-much better performance than strings for common operations, 
-and generally reduce memory allocations and copies, 
-while only entailing a small degradation of less common operations.
+Ropes are a high-level representation of text that offers much better performance than strings for common operations, and generally reduce memory allocations and copies, while only entailing a small degradation of less common operations.
 
-More precisely, where a string is represented as a memory buffer, a rope is 
-a tree structure whose leaves are slices of immutable strings.  
-Therefore, concatenation, appending, prepending, substrings, etc. 
-are operations that require only trivial tree manipulation, 
-generally without having to copy memory.  
-In addition, the tree structure of ropes makes them suitable as a 
-form of index to speed-up access to Unicode characters by index 
-in long chunks of text.
-
+More precisely, where a string is represented as a memory buffer, a rope is a tree structure whose leaves are slices of immutable strings.  Therefore, concatenation, appending, prepending, substrings, etc. are operations that require only trivial tree manipulation, generally without having to copy memory.  In addition, the tree structure of ropes makes them suitable as a form of index to speed-up access to Unicode characters by index in long chunks of text.
 The following operations are algorithmically faster in ropes
 
 - extracting a subrope is logarithmic (linear in strings);
@@ -26,41 +15,7 @@ The following operations are algorithmically faster in ropes
 - access to a character by index is logarithmic (linear in strings);
 
 If a Rope doesNotUnderstand, it prints the message to the transcript and
-delegates the message to a its stringRepresentation.  
-If you see this, please email me the details: Ken [dot] Dickey [at] whidbey [dot] com.
-
-Currently, most of the String protocol is implemented, so Ropes should be quite useful.
-
-Ropes are immutable, so can be safely shared by multiple threads/processes 
-without locking.
-
-Ropes mainly act like Strings, but note:
-````Smalltalk
-"Rope operations yield a new rope"
-r := Rope new .
-r := r nextPut: 'test '.
-r := r nextPut: 'me.'.
-r printString. " --> 'test me.'  "
-
-"The original rope is unchanged"
-r := Rope new.
-r nextPut: 'test '; nextPut: 'me.'.
-r printString. " --> ''  "
-
-"Use a RopeWrapper if you need an updating variable"
-r := RopeWrapper new.
-r nextPut: 'test '; nextPut: 'me.'.
-r printString. " --> 'test me.'  "
-````
-
-For #nextPut: and #nextPutAll: use a RopeWrapper, not a WriteStream:
-````Smalltalk
-	RopeWrapper with: Rope new.
-````
-rather than
-````Smalltalk
-	WriteStream on: String new.
-````
+delegates the message to a its stringRepresentation.
 
 ### Installation
 
@@ -70,26 +25,27 @@ To load the package
     | slash |
     slash := FileDirectory slash.
     CodePackageFile installPackageStream:
-        (FileStream concreteStream readOnlyFileNamed: 
+        (FileStream concreteStream readOnlyFileNamed:
             '..', slash, 'Cuis-Ropes', slash, 'Ropes.pck.st'
         )
 ````
 
-### Example application		
+### Example application
 
 To see how a text editor copes with Rope execute
 
 ````Smalltalk
     Rope openTextEditor.
-    'Some little test string.' asRope edit.
-````    
-	
+    FileListWindow openRopeFileList.
+    RopeTextEditor fromUser.
+````
+
 ### References
 
 - http://en.wikipedia.org/wiki/Rope
 - A Python implementation which uses Ropes http://morepypy.blogspot.com/2007/11/ropes-branch-merged.html
-- IBM Java Ropes performance report http://www.ibm.com/developerworks/java/library/j-ropes/index.html	
+- IBM Java Ropes performance report http://www.ibm.com/developerworks/java/library/j-ropes/index.html
 - 'Ropes: an Alternative to Strings' http://citeseer.ist.psu.edu/viewdoc/downloaddoi=10.1.1.14.9450&rep=rep1&type=pdf
   The optimizations suggested in this paper have been implemented, but more optimizations could be done.
-- The Mozilla Rust language uses Ropes http://static.rust-lang.org/doc/0.5/std/rope.html ; 
+- The Mozilla Rust language uses Ropes http://static.rust-lang.org/doc/0.5/std/rope.html ;
   Ropes API http://static.rust-lang.org/doc/0.5/std/rope.html#type-rope
