@@ -1,4 +1,4 @@
-'From Cuis 4.1 of 12 December 2012 [latest update: #1626] on 24 April 2013 at 2:05:20 pm'!
+'From Cuis 4.1 of 12 December 2012 [latest update: #1686] on 24 April 2013 at 6:06:27.169635 pm'!
 'Description Ropes: functional, immutable strings'!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
@@ -4275,7 +4275,7 @@ fromFile: aFileName
 
 	^self new initialize fromFile: aFileName! !
 
-!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 4/24/2013 13:35'!
+!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 4/24/2013 18:05'!
 fromUser
 	"Put up a StandardFileMenu and let the user choose a file to read into me."
 	"Answer an instance of me or nil"
@@ -4296,7 +4296,7 @@ fromUser
 		
 	SystemWindow 
 		editText: textModel
-			label: 'Text Editor' 
+			label: 'Text Editor (''',  (dialogResult name) ,  ''')'
 			wrap: true.
 	
 	^ textModel! !
