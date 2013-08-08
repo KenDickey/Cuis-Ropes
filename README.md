@@ -19,15 +19,10 @@ delegates the message to a its stringRepresentation.
 
 ### Installation
 
-To load the package
+To load the package in Cuis 4.2
 
 ````Smalltalk
-    | slash |
-    slash := FileDirectory slash.
-    CodePackageFile installPackageStream:
-        (FileStream concreteStream readOnlyFileNamed:
-            '..', slash, 'Cuis-Ropes', slash, 'Ropes.pck.st'
-        )
+	Feature require: 'Ropes'
 ````
 
 ### Example application

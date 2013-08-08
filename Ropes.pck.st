@@ -1,5 +1,8 @@
 'From Cuis 4.1 of 12 December 2012 [latest update: #1686] on 24 April 2013 at 6:06:27.169635 pm'!
 'Description Ropes: functional, immutable strings'!
+!provides: 'Ropes' 1 0!
+!requires: 'Compression' 1 nil!
+!requires: 'Cuis-Base' 42 1788!
 !classDefinition: #Rope category: #Ropes!
 ArrayedCollection subclass: #Rope
 	instanceVariableNames: ''
