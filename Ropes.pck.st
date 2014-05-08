@@ -1,8 +1,8 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #1788] on 8 August 2013 at 8:37:57.128000044 am'!
-'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 1!
-!requires: 'Cuis-Base' 42 1788 nil!
+'From Cuis 4.2 of 25 July 2013 [latest update: #1982] on 8 May 2014 at 9:15:06.780773 pm'!
+'Description Ropes: immutable (a.k.a. functional) strings'!
+!provides: 'Ropes' 1 2!
 !requires: 'Compression' 1 nil nil!
+!requires: 'Cuis-Base' 42 1788 nil!
 !classDefinition: #RopeTextModel category: #Ropes!
 TextModel subclass: #RopeTextModel
 	instanceVariableNames: 'fileName timeStamp'
@@ -3312,14 +3312,14 @@ Transcript log: 'LazyFileRope>>fileCheck  closed? >> ',
 	((fileStream closed not) and: [fileStream atEnd])
 		 ifTrue: [ self fileCleanup ]! !
 
-!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:21'!
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 5/8/2014 21:11'!
 fileCleanup
 	"Close and remove tempFile"
 
-	 | fileName |
-	fileName := fileStream name.
+	 | theFileName |
+	theFileName := fileStream name.
 	fileStream close.
-	FileDirectory deleteFilePath: fileName.! !
+	FileDirectory deleteFilePath: theFileName.! !
 
 !LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:21'!
 finalize
@@ -3328,22 +3328,22 @@ finalize
 	self fileCleanup.
 	! !
 
-!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:22'!
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 5/8/2014 21:12'!
 genTempFileName
 	"Answer the name of a file which is different than one that exists"
 	
 	"@@FIXME: Use /tmp on Unix, ??? on Windows"
 	
-	| dir looking rand fileName |
+	| dir looking rand theFileName |
 	
 	looking := true.
 	dir := FileDirectory default.
 	[looking] whileTrue: [
 		 rand := 777 atRandom: (Random new initialize).
- 		 fileName := 'tmp' , rand asString.
- 		 looking := dir fileExists: fileName.
+ 		 theFileName := 'tmp' , rand asString.
+ 		 looking := dir fileExists: theFileName.
 	].
-	^ fileName
+	^ theFileName
 ! !
 
 !LazyFileRope methodsFor: 'initialize-release' stamp: 'KenD 4/22/2013 19:37'!
@@ -3541,15 +3541,15 @@ at: anIndex
 
 	^self string at: (anIndex + startIndex - 1)! !
 
-!SubRope methodsFor: 'accessing' stamp: 'KenD 2/10/2013 19:31'!
+!SubRope methodsFor: 'accessing' stamp: 'KenD 5/8/2014 21:14'!
 at: index put: aCharacter 
 
 	"Answer a new rope"
-	| offsetIndex startIndex endIndex |
+	| offsetIndex theStartIndex endIndex |
 	
-	startIndex := self startIndex.
-	endIndex := startIndex + self size - 1.
-	offsetIndex := index +  startIndex - 1.
+	theStartIndex := self startIndex.
+	endIndex := theStartIndex + self size - 1.
+	offsetIndex := index +  theStartIndex - 1.
 	
 	(self size = 1)
 	ifTrue:  [
