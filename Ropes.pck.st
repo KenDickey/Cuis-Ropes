@@ -1,5 +1,5 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #1982] on 8 May 2014 at 9:15:06.780773 pm'!
-'Description Ropes: immutable (a.k.a. functional) strings'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #1982] on 14 May 2014 at 7:17:20.220106 am'!
+'Description Ropes: functional, immutable strings'!
 !provides: 'Ropes' 1 2!
 !requires: 'Compression' 1 nil nil!
 !requires: 'Cuis-Base' 42 1788 nil!
@@ -2754,6 +2754,11 @@ crlfString
 
 	^ (String crlfString asRope)! !
 
+!Rope class methodsFor: 'as yet unclassified' stamp: 'KenD 5/14/2014 07:17'!
+defaultFontClass
+
+	^ StrikeFont ! !
+
 !Rope class methodsFor: 'character collation' stamp: 'KenD 2/21/2013 18:57'!
 does: aCharacter caseInsensitiveCollateBefore: otherCharacter
 
@@ -3312,14 +3317,14 @@ Transcript log: 'LazyFileRope>>fileCheck  closed? >> ',
 	((fileStream closed not) and: [fileStream atEnd])
 		 ifTrue: [ self fileCleanup ]! !
 
-!LazyFileRope methodsFor: 'private' stamp: 'KenD 5/8/2014 21:11'!
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:21'!
 fileCleanup
 	"Close and remove tempFile"
 
-	 | theFileName |
-	theFileName := fileStream name.
+	 | fileName |
+	fileName := fileStream name.
 	fileStream close.
-	FileDirectory deleteFilePath: theFileName.! !
+	FileDirectory deleteFilePath: fileName.! !
 
 !LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:21'!
 finalize
@@ -3328,22 +3333,22 @@ finalize
 	self fileCleanup.
 	! !
 
-!LazyFileRope methodsFor: 'private' stamp: 'KenD 5/8/2014 21:12'!
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:22'!
 genTempFileName
 	"Answer the name of a file which is different than one that exists"
 	
 	"@@FIXME: Use /tmp on Unix, ??? on Windows"
 	
-	| dir looking rand theFileName |
+	| dir looking rand fileName |
 	
 	looking := true.
 	dir := FileDirectory default.
 	[looking] whileTrue: [
 		 rand := 777 atRandom: (Random new initialize).
- 		 theFileName := 'tmp' , rand asString.
- 		 looking := dir fileExists: theFileName.
+ 		 fileName := 'tmp' , rand asString.
+ 		 looking := dir fileExists: fileName.
 	].
-	^ theFileName
+	^ fileName
 ! !
 
 !LazyFileRope methodsFor: 'initialize-release' stamp: 'KenD 4/22/2013 19:37'!
@@ -3541,15 +3546,15 @@ at: anIndex
 
 	^self string at: (anIndex + startIndex - 1)! !
 
-!SubRope methodsFor: 'accessing' stamp: 'KenD 5/8/2014 21:14'!
+!SubRope methodsFor: 'accessing' stamp: 'KenD 2/10/2013 19:31'!
 at: index put: aCharacter 
 
 	"Answer a new rope"
-	| offsetIndex theStartIndex endIndex |
+	| offsetIndex startIndex endIndex |
 	
-	theStartIndex := self startIndex.
-	endIndex := theStartIndex + self size - 1.
-	offsetIndex := index +  theStartIndex - 1.
+	startIndex := self startIndex.
+	endIndex := startIndex + self size - 1.
+	offsetIndex := index +  startIndex - 1.
 	
 	(self size = 1)
 	ifTrue:  [
