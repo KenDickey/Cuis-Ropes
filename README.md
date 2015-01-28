@@ -3,6 +3,8 @@ Cuis-Ropes
 
 ### Immutable (a.k.a. functional) strings for Cuis
 
+Tested in Cuis 4.2 rev 2169
+
 Ropes are a high-level representation of text that offers much better performance than strings for common operations, and generally reduce memory allocations and copies, while only entailing a small degradation of less common operations.
 
 More precisely, where a string is represented as a memory buffer, a rope is a tree structure whose leaves are slices of immutable strings.  Therefore, concatenation, appending, prepending, substrings, etc. are operations that require only trivial tree manipulation, generally without having to copy memory.  In addition, the tree structure of ropes makes them suitable as a form of index to speed-up access to Unicode characters by index in long chunks of text.
@@ -22,7 +24,7 @@ delegates the message to a its stringRepresentation.
 To load the package in Cuis 4.2
 
 ````Smalltalk
-	Feature require: 'Ropes'
+	Feature require: 'Ropes'.
 ````
 
 ### Example application
