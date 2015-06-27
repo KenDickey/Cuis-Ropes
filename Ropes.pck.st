@@ -1,6 +1,6 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #1982] on 14 May 2014 at 7:17:20.220106 am'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2390] on 27 June 2015 at 3:50:20.572502 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 2!
+!provides: 'Ropes' 1 3!
 !requires: 'Compression' 1 nil nil!
 !requires: 'Cuis-Base' 42 1788 nil!
 !classDefinition: #RopeTextModel category: #Ropes!
@@ -295,12 +295,12 @@ asRope
 
 	^self asString asRope! !
 
-!FileListWindow class methodsFor: '*ropes' stamp: 'KenD 4/23/2013 20:35'!
+!FileListWindow class methodsFor: '*ropes' stamp: 'jmv 6/27/2015 09:38'!
 openRopeFileList
 	"
 	FileListWindow openRopeFileList
 	"
-	FileListWindow open: (RopeFileList new directory: FileDirectory default) label: nil! !
+	FileListWindow open: (RopeFileList new directory: FileDirectory currentDirectory) label: nil! !
 
 !RopeTextModel methodsFor: 'commands' stamp: 'KenD 4/23/2013 20:14'!
 acceptContentsFrom: aTextModelMorph
@@ -394,13 +394,13 @@ refetch
 		
 	^true! !
 
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2013 13:45'!
+!RopeTextModel methodsFor: 'file handeling' stamp: 'jmv 6/27/2015 09:39'!
 saveToNewFileNotifying: aTextModelMorph
 	"Answer true if OK, else nil"
 
 	| dialogResult |	
 	dialogResult := (StandardFileMenu new) 
-   					newFileFrom: (FileDirectory default)
+   					newFileFrom: (FileDirectory currentDirectory)
 					withPattern: '*' ; 
 					startUpWithCaption: 'Type new file name for save'.
 	
@@ -448,7 +448,7 @@ fromFile: aFileName
 
 	^self new initialize fromFile: aFileName! !
 
-!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 4/24/2013 18:05'!
+!RopeTextModel class methodsFor: 'instance creation' stamp: 'jmv 6/27/2015 09:39'!
 fromUser
 	"Put up a StandardFileMenu and let the user choose a file to read into me."
 	"Answer an instance of me or nil"
@@ -457,7 +457,7 @@ fromUser
 "	
 	| dialogResult slash textModel |
 	dialogResult := (StandardFileMenu new)
-						oldFileFrom: (FileDirectory default) ;
+						oldFileFrom: (FileDirectory currentDirectory) ;
 	 					startUpWithCaption: 'Select a UTF-8 Unicode text file'.
 	
 	((dialogResult isNil) or: [dialogResult isDirectory]) ifTrue: [ ^nil ].
@@ -3317,14 +3317,14 @@ Transcript log: 'LazyFileRope>>fileCheck  closed? >> ',
 	((fileStream closed not) and: [fileStream atEnd])
 		 ifTrue: [ self fileCleanup ]! !
 
-!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:21'!
+!LazyFileRope methodsFor: 'private' stamp: 'jmv 6/27/2015 09:44'!
 fileCleanup
 	"Close and remove tempFile"
 
-	 | fileName |
-	fileName := fileStream name.
+	 | fn |
+	fn := fileStream name.
 	fileStream close.
-	FileDirectory deleteFilePath: fileName.! !
+	fileStream directory deleteFileNamed: fn.! !
 
 !LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:21'!
 finalize
@@ -3333,7 +3333,7 @@ finalize
 	self fileCleanup.
 	! !
 
-!LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:22'!
+!LazyFileRope methodsFor: 'private' stamp: 'jmv 6/27/2015 09:39'!
 genTempFileName
 	"Answer the name of a file which is different than one that exists"
 	
@@ -3342,7 +3342,7 @@ genTempFileName
 	| dir looking rand fileName |
 	
 	looking := true.
-	dir := FileDirectory default.
+	dir := FileDirectory currentDirectory.
 	[looking] whileTrue: [
 		 rand := 777 atRandom: (Random new initialize).
  		 fileName := 'tmp' , rand asString.
@@ -3351,14 +3351,14 @@ genTempFileName
 	^ fileName
 ! !
 
-!LazyFileRope methodsFor: 'initialize-release' stamp: 'KenD 4/22/2013 19:37'!
+!LazyFileRope methodsFor: 'initialize-release' stamp: 'jmv 6/27/2015 09:39'!
 initializeFromFile: aName
 	
 	| tmpFileName |
 	super initialize.
 	"As Ropes are immutable, copy the file"
 	tmpFileName := self genTempFileName.
-	FileDirectory default copyFileNamed: aName toFileNamed: tmpFileName.
+	FileDirectory currentDirectory copyFileNamed: aName toFileNamed: tmpFileName.
 	
 	"Open a FileStream on the copy"
 	fileName := aName.
@@ -3420,17 +3420,17 @@ initialize
 	ChunkSize := 1024.
 	! !
 
-!LazyFileRope class methodsFor: 'instance creation' stamp: 'KenD 4/22/2013 19:44'!
+!LazyFileRope class methodsFor: 'instance creation' stamp: 'jmv 6/27/2015 09:40'!
 onFileNamed: aName
 	"Answer a new instance of me"
 "
 	(LazyFileString onFileNamed: 'test.txt') inspect.
 "
 	 | dirEntry |
-	(FileDirectory default fileExists: aName)
+	(FileDirectory currentDirectory fileExists: aName)
 		ifFalse: [ ^ self error: 'Failed to find file ' , aName ].
 
-	dirEntry := FileDirectory directoryEntryFor: aName.
+	dirEntry := FileDirectory currentDirectory directoryEntryFor: aName.
 	(dirEntry isDirectory) 
 		ifTrue: [ ^self error: 'Not a text file: ' , aName ].
 		
