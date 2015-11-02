@@ -1,8 +1,8 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2390] on 27 June 2015 at 3:50:20.572502 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2568] on 1 November 2015 at 3:59:41.380626 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 3!
-!requires: 'Compression' 1 nil nil!
+!provides: 'Ropes' 1 7!
 !requires: 'Cuis-Base' 42 1788 nil!
+!requires: 'Compression' 1 nil nil!
 !classDefinition: #RopeTextModel category: #Ropes!
 TextModel subclass: #RopeTextModel
 	instanceVariableNames: 'fileName timeStamp'
@@ -295,12 +295,12 @@ asRope
 
 	^self asString asRope! !
 
-!FileListWindow class methodsFor: '*ropes' stamp: 'jmv 6/27/2015 09:38'!
+!FileListWindow class methodsFor: '*ropes' stamp: 'KenD 10/31/2015 19:28'!
 openRopeFileList
 	"
 	FileListWindow openRopeFileList
 	"
-	FileListWindow open: (RopeFileList new directory: FileDirectory currentDirectory) label: nil! !
+	FileListWindow open: (RopeFileList new directory: FmDirectoryEntry currentDirectory) label: nil! !
 
 !RopeTextModel methodsFor: 'commands' stamp: 'KenD 4/23/2013 20:14'!
 acceptContentsFrom: aTextModelMorph
@@ -338,19 +338,18 @@ fileName
 
 	^ fileName! !
 
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/23/2013 20:12'!
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 10/31/2015 16:39'!
 fromFile: aFileName
 	"Open the file aFileName if possible and read the file into actualContents.
 	Answer self if successful else nil."
 	
 	| aFile |
 	(aFileName isEmpty) ifFalse: [
-		aFile := FileStream readOnlyFileNamed: aFileName.
-		((aFile isNil) or: [ aFile isDirectory ]) ifFalse: [
+		aFile := aFileName asFileEntry.
+		((aFile exists) and: [ aFile isFile ]) ifTrue: [
 			"Found a non-directory file; assume reable UTF-8"
 			fileName := aFileName.
-			timeStamp := aFile directoryEntry modificationDateAndTime.
-			aFile close.
+			timeStamp := aFile modificationTime .
 			actualContents := (LazyFileRope onFileNamed: aFileName) asText.
 			^self
 		]
@@ -374,7 +373,7 @@ openLabel: aString
 	
 	SystemWindow editText: self label: aString asRope wrap: true! !
 
-!RopeTextModel methodsFor: 'misc' stamp: 'KenD 4/23/2013 20:14'!
+!RopeTextModel methodsFor: 'misc' stamp: 'KenD 11/1/2015 15:44'!
 refetch
 	"Answer true if actualContents was actually fetched."
 	
@@ -386,31 +385,33 @@ refetch
 		"(Re)read contents"
 		actualContents := (LazyFileRope onFileNamed: fileName) asText.
 		"Reset timeStamp"
-		dirEntry :=  (FileDirectory on: fileName) directoryEntry.
-		timeStamp := dirEntry modificationDateAndTime.
+		dirEntry :=  fileName asDirectoryEntry .
+		timeStamp := dirEntry modificationTime.
 	].
 
 	self changed: #refetched.
 		
 	^true! !
 
-!RopeTextModel methodsFor: 'file handeling' stamp: 'jmv 6/27/2015 09:39'!
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 10/31/2015 16:31'!
 saveToNewFileNotifying: aTextModelMorph
 	"Answer true if OK, else nil"
 
 	| dialogResult |	
 	dialogResult := (StandardFileMenu new) 
-   					newFileFrom: (FileDirectory currentDirectory)
+   					newFileFrom: (FmDirectoryEntry currentDirectory)
 					withPattern: '*' ; 
 					startUpWithCaption: 'Type new file name for save'.
 	
 	(dialogResult isNil)
 	ifTrue: [ ^nil ]
-	ifFalse: [ | fileStream  |
-		fileName := (dialogResult directory) fullPathFor: (dialogResult name).
-		fileStream := FileStream newFileNamed: fileName.
-		fileStream nextPutAll: (self actualContents asString asString); close.
-		timeStamp := (FileDirectory on: fileName) directoryEntry modificationDateAndTime.
+	ifFalse: [
+		dialogResult directory
+				 at: dialogResult name
+				 put: self actualContents asString asString.
+
+		timeStamp := (dialogResult directory
+				 		name: dialogResult name) modificationTime.
 		"@@@FIXME Notify aTextModelMorph"
 		^true
 	]! !
@@ -448,24 +449,22 @@ fromFile: aFileName
 
 	^self new initialize fromFile: aFileName! !
 
-!RopeTextModel class methodsFor: 'instance creation' stamp: 'jmv 6/27/2015 09:39'!
+!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 10/31/2015 20:06'!
 fromUser
 	"Put up a StandardFileMenu and let the user choose a file to read into me."
 	"Answer an instance of me or nil"
 "
 	RopeTextModel fromUser.
 "	
-	| dialogResult slash textModel |
+	| dialogResult textModel |
 	dialogResult := (StandardFileMenu new)
-						oldFileFrom: (FileDirectory currentDirectory) ;
+						oldFileFrom: (FmDirectoryEntry currentDirectory) ;
 	 					startUpWithCaption: 'Select a UTF-8 Unicode text file'.
 	
 	((dialogResult isNil) or: [dialogResult isDirectory]) ifTrue: [ ^nil ].
 
-	slash := FileDirectory slash.
-
 	textModel := self new initialize 
-		fromFile: ( (dialogResult directory fullName) , slash , (dialogResult name) ).
+		fromFile: ( (dialogResult directory pathName) , '/' , (dialogResult name) ).
 		
 	SystemWindow 
 		editText: textModel
@@ -524,13 +523,14 @@ meaningfully be saved at present.' format:{type}).
 	^ false  "failed"
 ! !
 
-!RopeFileList methodsFor: 'private' stamp: 'KenD 4/24/2013 13:30'!
+!RopeFileList methodsFor: 'private' stamp: 'KenD 10/31/2015 19:32'!
 readContentsBrief: ignoredBrevityFlag
 	"Read the contents of the receiver's selected file, unless it is too long.
 	  Don't create a file here.  Check if exists."
 	| fileStream |
 
-	fileStream := directory oldFileOrNoneNamed: self fullName.
+	fileStream := StandardFileStream new open: self fullName forWrite: false.
+
 	fileStream 
 		ifNil: [ ^ 'For some reason, this file cannot be read' ]
 		ifNotNil: [ fileStream close ].
@@ -3317,14 +3317,14 @@ Transcript log: 'LazyFileRope>>fileCheck  closed? >> ',
 	((fileStream closed not) and: [fileStream atEnd])
 		 ifTrue: [ self fileCleanup ]! !
 
-!LazyFileRope methodsFor: 'private' stamp: 'jmv 6/27/2015 09:44'!
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 11/1/2015 15:59'!
 fileCleanup
 	"Close and remove tempFile"
 
 	 | fn |
 	fn := fileStream name.
 	fileStream close.
-	fileStream directory deleteFileNamed: fn.! !
+	fn asFileEntry delete.! !
 
 !LazyFileRope methodsFor: 'private' stamp: 'KenD 4/22/2013 19:21'!
 finalize
@@ -3333,7 +3333,7 @@ finalize
 	self fileCleanup.
 	! !
 
-!LazyFileRope methodsFor: 'private' stamp: 'jmv 6/27/2015 09:39'!
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 10/31/2015 16:48'!
 genTempFileName
 	"Answer the name of a file which is different than one that exists"
 	
@@ -3342,28 +3342,28 @@ genTempFileName
 	| dir looking rand fileName |
 	
 	looking := true.
-	dir := FileDirectory currentDirectory.
+	dir := FmDirectoryEntry currentDirectory.
 	[looking] whileTrue: [
 		 rand := 777 atRandom: (Random new initialize).
  		 fileName := 'tmp' , rand asString.
- 		 looking := dir fileExists: fileName.
+ 		 looking := (dir name: fileName) exists.
 	].
 	^ fileName
 ! !
 
-!LazyFileRope methodsFor: 'initialize-release' stamp: 'jmv 6/27/2015 09:39'!
-initializeFromFile: aName
+!LazyFileRope methodsFor: 'initialize-release' stamp: 'KenD 11/1/2015 15:55'!
+initializeFromFile: aFmFileEntry "entry exists and is a text file"
 	
 	| tmpFileName |
 	super initialize.
 	"As Ropes are immutable, copy the file"
-	tmpFileName := self genTempFileName.
-	FileDirectory currentDirectory copyFileNamed: aName toFileNamed: tmpFileName.
+	tmpFileName := aFmFileEntry parent pathName, '/', self genTempFileName.
+	aFmFileEntry copyTo: tmpFileName.
 	
 	"Open a FileStream on the copy"
-	fileName := aName.
+	fileName := tmpFileName.
 	totalCount := nil.
-	fileStream := FileStream readOnlyFileNamed: tmpFileName.
+	fileStream := StandardFileStream new open: tmpFileName forWrite: false.
 	soFar := (fileStream next: ChunkSize) asRope..
 	
 	^self
@@ -3420,27 +3420,23 @@ initialize
 	ChunkSize := 1024.
 	! !
 
-!LazyFileRope class methodsFor: 'instance creation' stamp: 'jmv 6/27/2015 09:40'!
+!LazyFileRope class methodsFor: 'instance creation' stamp: 'KenD 10/31/2015 19:41'!
 onFileNamed: aName
 	"Answer a new instance of me"
 "
 	(LazyFileString onFileNamed: 'test.txt') inspect.
 "
-	 | dirEntry |
-	(FileDirectory currentDirectory fileExists: aName)
+	 | fileEntry |
+	fileEntry := aName asFileEntry.
+	(fileEntry exists)
 		ifFalse: [ ^ self error: 'Failed to find file ' , aName ].
 
-	dirEntry := FileDirectory currentDirectory directoryEntryFor: aName.
-	(dirEntry isDirectory) 
+	(fileEntry isDirectory) 
 		ifTrue: [ ^self error: 'Not a text file: ' , aName ].
 		
-	((dirEntry fileSize) < ChunkSize)
-	ifFalse: [ ^ self new initializeFromFile: aName ]
-	ifTrue: [ | fileStream result |  "Too small to bother with"
-		fileStream := FileStream readOnlyFileNamed: aName.
-		 result := fileStream contentsOfEntireFile.
-		^ result asRope
-	 ]
+	((fileEntry fileSize) < ChunkSize)
+	ifFalse: [ ^ self new initializeFromFile: fileEntry ]
+	ifTrue: [ ^ fileEntry textContents asRope ] "Too small to bother with"
 
 	! !
 
