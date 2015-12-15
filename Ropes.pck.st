@@ -1,7 +1,7 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2568] on 1 November 2015 at 3:59:41.380626 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2621] on 14 December 2015 at 7:06:30.227484 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 7!
-!requires: 'Cuis-Base' 42 1788 nil!
+!provides: 'Ropes' 1 8!
+!requires: 'Cuis-Base' 42 2621 nil!
 !requires: 'Compression' 1 nil nil!
 !classDefinition: #RopeTextModel category: #Ropes!
 TextModel subclass: #RopeTextModel
@@ -416,13 +416,13 @@ saveToNewFileNotifying: aTextModelMorph
 		^true
 	]! !
 
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2013 13:44'!
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 12/14/2015 19:04'!
 saveToOldFileNotifying: aTextModelMorph
 	"Answer true if OK, else nil"
 
 	| dirEntry fileStream  |	
-	dirEntry :=  (FileDirectory on: fileName) directoryEntry.
-	(timeStamp = dirEntry  modificationDateAndTime) 
+	dirEntry :=  fileName asFileEntry.
+	(timeStamp = dirEntry  modificationTime) 
 	ifFalse: [
 		(self confirm: 
 'Caution!! Contents were saved
@@ -433,7 +433,7 @@ editing them here.  Accept anyway?' )
 					
 	fileStream := FileStream newFileNamed: fileName.
 	fileStream nextPutAll: (self actualContents asString asString); close.
-	timeStamp := (FileDirectory on: fileName) directoryEntry modificationDateAndTime.
+	timeStamp := fileName asFileEntry modificationTime.
 	"@@@FIXME Notify aTextModelMorph"
 	^true
 ! !
@@ -671,13 +671,13 @@ asHex
 	self do: [ :ch | stream nextPutAll: ch hex ].
 	^stream contents asRope! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 19:34'!
+!Rope methodsFor: 'converting' stamp: 'KenD 12/14/2015 18:49'!
 asIdentifier: shouldBeCapitalized
 	"Return a legal identifier, with first character in upper case if shouldBeCapitalized is true, else lower case.  This will always return a legal identifier, even for an empty string"
 
 	| aRope firstChar firstLetterPosition |
-	aRope _ self select: [:el | el isGenerallyValidInIdentifiers].
-	firstLetterPosition _ aRope findFirst: [:ch | ch isGenerallyValidStartOfInIdentifiers].
+	aRope _ self select: [:el | el tokenish].
+	firstLetterPosition _ aRope findFirst: [:ch | (ch isValidInIdentifiers) and: [ch isDigit not]].
 	aRope _ firstLetterPosition = 0
 		ifFalse:
 			[aRope copyFrom: firstLetterPosition to: aRope size]
@@ -714,20 +714,20 @@ asInteger
 'abc234def567' asInteger
 "! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 19:40'!
+!Rope methodsFor: 'converting' stamp: 'KenD 12/14/2015 18:51'!
 asLegalSelector
 	| toUse |
 	toUse _ ''.
 	self do:
-		[:char | char isGenerallyValidInIdentifiers ifTrue: [ toUse _ toUse copyWith: char]].
+		[:char | char tokenish ifTrue: [ toUse _ toUse copyWith: char]].
 		
-	(self size = 0 or: [self first isGenerallyValidStartOfInIdentifiers not])
+	((self size = 0 or: [self first tokenish not]) or: [self first isDigit])
 	ifTrue:	[ toUse _ 'v', toUse].
 
 	^ (toUse withFirstCharacterDownshifted asRope)
 
 "
-'234znak 43 ) 2' asRope asLegalSelector
+'234znak 43 ) 2' asRope asLegalSelector 234znak432
 "! !
 
 !Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 19:45'!
