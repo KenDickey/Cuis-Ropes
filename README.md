@@ -3,7 +3,7 @@ Cuis-Ropes
 
 ### Immutable (a.k.a. functional) strings for Cuis
 
-Tested in Cuis 4.2 rev 2621
+Tested in Cuis 4.2 rev 2739
 
 Ropes are a high-level representation of text that offers much better performance than strings for common operations, and generally reduce memory allocations and copies, while only entailing a small degradation of less common operations.
 
@@ -36,6 +36,8 @@ To see how a text editor copes with Rope execute
     FileListWindow openRopeFileList.
     RopeTextEditor fromUser.
 ````
+Or just open the FileList and select a file with suffix '.txt' and use the 'Basic Text Edit' button.
+
 
 ### References
 
