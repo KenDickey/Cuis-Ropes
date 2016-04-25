@@ -1,8 +1,8 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2739] on 24 April 2016 at 6:14:29.905414 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2739] on 24 April 2016 at 6:38:13.417278 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 10!
-!requires: 'Cuis-Base' 42 2621 nil!
+!provides: 'Ropes' 1 11!
 !requires: 'Compression' 1 nil nil!
+!requires: 'Cuis-Base' 42 2621 nil!
 !requires: 'Goodies' 1 4 nil!
 !classDefinition: #RopeTextModel category: #Ropes!
 TextModel subclass: #RopeTextModel
@@ -3810,6 +3810,11 @@ openFromFileEntry: fileEntry
 			label: 'Text Editor (''',  fileEntry name ,  ''')'
 			wrap: true.! !
 
+!RopeTextEditor class methodsFor: 'instance creation' stamp: 'KenD 4/24/2016 18:35'!
+openTextEditor
+
+	RopeTextModel openLabel: 'Text Editor'! !
+
 !RopeTextEditor class methodsFor: 'file reader registration' stamp: 'KenD 4/24/2016 18:06'!
 serviceRopeTextEdit
 	"Answer the service of opening a file in a RopeTextEditor"
@@ -3829,6 +3834,29 @@ unload
 "
 
 	FileList unregisterFileReader: self ! !
+
+!RopeTextEditor class methodsFor: 'menu-world' stamp: 'KenD 4/24/2016 18:36'!
+worldMenuForOpenGroup
+	^ Dictionary new
+		
+			at: #itemGroup
+			put: 10;
+		
+			at: #itemOrder
+			put: 10;
+		
+			at: #label
+			put: 'Basic Text Editor';
+		
+			at: #object
+			put: self;
+		
+			at: #selector
+			put: #openTextEditor;
+		
+			at: #balloonText
+			put: 'A window for composing text';
+		yourself.! !
 
 !RopeWrapper methodsFor: 'conversion' stamp: 'KenD 3/6/2013 17:18'!
 asRope
