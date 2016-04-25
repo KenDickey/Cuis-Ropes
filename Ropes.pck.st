@@ -1,8 +1,9 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2621] on 14 December 2015 at 7:06:30.227484 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2739] on 24 April 2016 at 6:14:29.905414 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 8!
+!provides: 'Ropes' 1 10!
 !requires: 'Cuis-Base' 42 2621 nil!
 !requires: 'Compression' 1 nil nil!
+!requires: 'Goodies' 1 4 nil!
 !classDefinition: #RopeTextModel category: #Ropes!
 TextModel subclass: #RopeTextModel
 	instanceVariableNames: 'fileName timeStamp'
@@ -218,6 +219,12 @@ asRope
 
 	^ self printString asRope! !
 
+!Character methodsFor: '*ropes' stamp: 'KenD 2/9/2013 20:08'!
+asRope
+	"Answer self as a rope"
+
+	^self asString asRope! !
+
 !Array methodsFor: '*ropes' stamp: 'KenD 2/23/2013 20:19'!
 asRope
 	"Elements must be characters. Answer a rope"
@@ -289,12 +296,6 @@ asTextRope
 
 	^ Text string: (self string asRope) runs:(self runs copy)! !
 
-!Character methodsFor: '*ropes' stamp: 'KenD 2/9/2013 20:08'!
-asRope
-	"Answer self as a rope"
-
-	^self asString asRope! !
-
 !FileListWindow class methodsFor: '*ropes' stamp: 'KenD 10/31/2015 19:28'!
 openRopeFileList
 	"
@@ -338,7 +339,7 @@ fileName
 
 	^ fileName! !
 
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 10/31/2015 16:39'!
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 16:32'!
 fromFile: aFileName
 	"Open the file aFileName if possible and read the file into actualContents.
 	Answer self if successful else nil."
@@ -350,7 +351,7 @@ fromFile: aFileName
 			"Found a non-directory file; assume reable UTF-8"
 			fileName := aFileName.
 			timeStamp := aFile modificationTime .
-			actualContents := (LazyFileRope onFileNamed: aFileName) asText.
+			actualContents := (aFileName asFileEntry fileContents asRope) asText.
 			^self
 		]
 	].
@@ -373,25 +374,76 @@ openLabel: aString
 	
 	SystemWindow editText: self label: aString asRope wrap: true! !
 
-!RopeTextModel methodsFor: 'misc' stamp: 'KenD 11/1/2015 15:44'!
+!RopeTextModel methodsFor: 'misc' stamp: 'KenD 4/24/2016 16:33'!
 refetch
 	"Answer true if actualContents was actually fetched."
 	
-	(actualContents class = LazyFileRope) ifTrue: [
-		 "Remove old tmp file"
-		actualContents fileCleanup. 
-	].
 	(self fileName) ifNotNil: [ | dirEntry  |	
-		"(Re)read contents"
-		actualContents := (LazyFileRope onFileNamed: fileName) asText.
 		"Reset timeStamp"
-		dirEntry :=  fileName asDirectoryEntry .
+		dirEntry :=  fileName asFileEntry .
 		timeStamp := dirEntry modificationTime.
+		"(Re)read contents"
+		actualContents := (dirEntry fileContents asRope) asText.
 	].
 
 	self changed: #refetched.
 		
 	^true! !
+
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 16:01'!
+save
+	"Answer true if OK, else nil"
+
+	| dirEntry  |	
+	dirEntry :=  fileName asFileEntry.
+	(timeStamp = dirEntry modificationTime) 
+	ifFalse: [
+		(self confirm: 
+'Caution!! Contents were saved
+elsewhere since you started
+editing them here.  Accept anyway?' ) 
+		ifFalse: [ ^nil ]
+	].
+				
+	dirEntry fileContents: (self actualContents asString asString).
+	timeStamp := dirEntry modificationTime.
+	^true
+! !
+
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 15:57'!
+saveAs
+	"Answer true if OK, else nil"
+
+	| dialogResult |	
+	dialogResult := (StandardFileMenu new) 
+   					newFileFrom: (FmDirectoryEntry currentDirectory)
+					withPattern: '*' ; 
+					startUpWithCaption: 'Type new file name for save'.
+	
+	(dialogResult isNil)
+	ifTrue: [ ^nil ]
+	ifFalse: [
+		dialogResult directory
+				 at: dialogResult name
+				 put: self actualContents asString asString.
+
+		timeStamp := (dialogResult directory
+				 		name: dialogResult name) modificationTime.
+		^true
+	]! !
+
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 16:38'!
+saveAs: aFileName
+	"Answer true if OK, else nil"
+	
+	| dirEntry  |	
+	fileName := aFileName.
+	dirEntry :=  fileName asFileEntry.		
+	dirEntry fileContents: (self actualContents asString asString).
+	timeStamp := dirEntry modificationTime.
+	^true
+
+! !
 
 !RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 10/31/2015 16:31'!
 saveToNewFileNotifying: aTextModelMorph
@@ -416,11 +468,11 @@ saveToNewFileNotifying: aTextModelMorph
 		^true
 	]! !
 
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 12/14/2015 19:04'!
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 15:56'!
 saveToOldFileNotifying: aTextModelMorph
 	"Answer true if OK, else nil"
 
-	| dirEntry fileStream  |	
+	| dirEntry  |	
 	dirEntry :=  fileName asFileEntry.
 	(timeStamp = dirEntry  modificationTime) 
 	ifFalse: [
@@ -430,9 +482,8 @@ elsewhere since you started
 editing them here.  Accept anyway?' ) 
 		ifFalse: [ aTextModelMorph flash. ^nil ]
 	].
-					
-	fileStream := FileStream newFileNamed: fileName.
-	fileStream nextPutAll: (self actualContents asString asString); close.
+				
+	dirEntry fileContents: (self actualContents asString).
 	timeStamp := fileName asFileEntry modificationTime.
 	"@@@FIXME Notify aTextModelMorph"
 	^true
@@ -478,10 +529,10 @@ openLabel: aString
 
 	self new openLabel: aString asRope! !
 
-!RopeFileList methodsFor: 'private' stamp: 'KenD 4/24/2013 13:25'!
+!RopeFileList methodsFor: 'private' stamp: 'KenD 4/24/2016 16:31'!
 defaultContents
 	acceptedContentsCache := (list
-		ifNil: [ acceptedContentsCache := (LazyFileRope onFileNamed: self fullName) asText ]
+		ifNil: [ acceptedContentsCache := (Rope emptyRope) asText ]
 		ifNotNil: [
 			(String streamContents:
 				[:s | s nextPutAll: 'NO FILE SELECTED'; newLine.
@@ -523,24 +574,20 @@ meaningfully be saved at present.' format:{type}).
 	^ false  "failed"
 ! !
 
-!RopeFileList methodsFor: 'private' stamp: 'KenD 10/31/2015 19:32'!
+!RopeFileList methodsFor: 'private' stamp: 'KenD 4/24/2016 16:30'!
 readContentsBrief: ignoredBrevityFlag
-	"Read the contents of the receiver's selected file, unless it is too long.
+	"Read the contents of the receiver's selected file.
 	  Don't create a file here.  Check if exists."
-	| fileStream |
+	| fileEntry |
 
-	fileStream := StandardFileStream new open: self fullName forWrite: false.
+	fileEntry := self fullName asFileEntry.
 
-	fileStream 
-		ifNil: [ ^ 'For some reason, this file cannot be read' ]
-		ifNotNil: [ fileStream close ].
-
-	(acceptedContentsCache class = LazyFileRope)
-		ifTrue: [ acceptedContentsCache fileCleanup ]. "Remove old tmp file"
+	fileEntry exists 
+		ifFalse: [ ^ 'For some reason, this file cannot be read' ].
 	
 	brevityState := #fullFile.
 	
-	^ acceptedContentsCache := (LazyFileRope onFileNamed: self fullName) asText
+	^ acceptedContentsCache := (fileEntry contents asRope) asText
 	! !
 
 !Rope methodsFor: 'copying' stamp: 'KenD 2/9/2013 19:55'!
@@ -3640,14 +3687,39 @@ string: aString startIndex: anIndex length: numberOfChars
 	
 	^self! !
 
-!RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 4/23/2013 20:07'!
+!RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 4/24/2016 15:35'!
+save
+	"Save command"
+	model fileName ifNotNil: [
+		model save
+			ifTrue: [ morph hasUnacceptedEdits: false ]
+		]
+		 ifNil: [ self saveAs ].
+	^true! !
+
+!RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 4/24/2016 15:36'!
 save: aKeyboardEvent
-	"Submit the current text.  Equivalent to 'accept' "
+	"Save keystroke"
+	^self save! !
 
-	self acceptContents.
-	^ true! !
+!RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 4/24/2016 15:34'!
+saveAs
+	"SaveAs command"
+	| fileName |
+	fileName _ FillInTheBlankMorph
+			request: 'File name?'
+			initialAnswer: ''.
+	fileName isEmpty ifTrue: [ ^false ]. "abort"
 
-!RopeTextEditor class methodsFor: 'keyboard shortcut tables' stamp: 'KenD 4/23/2013 20:07'!
+	model saveAs: fileName.	
+	morph hasUnacceptedEdits: false.
+	morph owningWindow
+		setLabel: model fileName;
+		invalidateTitleArea.
+	
+	^true! !
+
+!RopeTextEditor class methodsFor: 'keyboard shortcut tables' stamp: 'KenD 4/24/2016 15:32'!
 cmdShortcutsSpec
 	"
 	Editor initialize
@@ -3665,10 +3737,19 @@ cmdShortcutsSpec
 
 		#(		$k	#offerFontMenu:			'Set font')
 		
-		#(		$s	#save:							'Save (i.e. accept)')
+		#(		$s	#save:						'Save (i.e. accept)')
 
 		#(		$u	#align:						'Toggle alignment')
 	)! !
+
+!RopeTextEditor class methodsFor: 'file reader registration' stamp: 'KenD 4/24/2016 16:51'!
+fileReaderServicesForFile: filename suffix: suffix
+	"FileList buttons that open a Simple Rope Text Editor on contents."
+
+	(#('txt') includes: suffix) ifTrue: [
+		^ { self serviceRopeTextEdit } ].
+
+	^#()! !
 
 !RopeTextEditor class methodsFor: 'instance creation' stamp: 'KenD 4/24/2013 13:39'!
 fromUser
@@ -3676,13 +3757,78 @@ fromUser
 	
 	RopeTextModel fromUser.! !
 
-!RopeTextEditor class methodsFor: 'class initialization' stamp: 'KenD 4/23/2013 20:08'!
+!RopeTextEditor class methodsFor: 'class initialization' stamp: 'KenD 4/24/2016 17:51'!
 initialize
 
 "
 	RopeTextEditor initialize.
 "
-	super initialize! !
+	super initialize.
+	self initializeMenu.
+	FileList registerFileReader: self.! !
+
+!RopeTextEditor class methodsFor: 'keyboard shortcut tables' stamp: 'KenD 4/24/2016 15:31'!
+initializeMenu
+	"Initialize the mouseButton2 (right button) pop-up menu and corresponding messages."
+	"
+	Editor initialize
+	"
+
+	menu _ SelectionMenu fromArray: {
+		{'Help...'.						#openHelp}.
+		#-.
+		{'Save (s)'.						#save}.
+		{'SaveAs...'.					#saveAs}.
+		#-.
+		{'Find...(f)'.						#find}.
+		{'Find Again (g)'.				#findAgain}.
+		{'Use Selection for Find (j)'.	#setSearchString}.
+		#-.
+		{'Undo - multiple (z)'.			#undo}.
+		{'Redo - multiple (Z)'.			#redo}.
+		{'Undo / Redo history'.		#offerUndoHistory}.
+		#-.
+		{'Copy (c)'.					#copySelection}.
+		{'Cut (x)'.						#cut}.
+		{'Paste (v)'.					#paste}.
+		{'Paste without Format'.		#pasteString}.
+		{'Paste...'.						#pasteRecent}.
+		#-.
+		{'Toggle WordWrap'.			#wrapOnOff}.
+		{'Set Font... (k)'.				#offerFontMenu}.
+		{'Set Alignment...'.				#chooseAlignment}.
+	}! !
+
+!RopeTextEditor class methodsFor: 'instance creation' stamp: 'KenD 4/24/2016 18:04'!
+openFromFileEntry: fileEntry
+
+	| model fileName  |
+	fileName := fileEntry pathName.
+	model := RopeTextModel fromFile: fileName.
+	SystemWindow 
+		editText: model
+			label: 'Text Editor (''',  fileEntry name ,  ''')'
+			wrap: true.! !
+
+!RopeTextEditor class methodsFor: 'file reader registration' stamp: 'KenD 4/24/2016 18:06'!
+serviceRopeTextEdit
+	"Answer the service of opening a file in a RopeTextEditor"
+
+	^ (SimpleServiceEntry
+		provider: self 
+		label: 'open a simple text file'
+		selector: #openFromFileEntry:
+		description: 'open this file with a Rope Text Editor'
+		buttonLabel: 'Basic Text Edit')
+		argumentGetter: [ :fileList | fileList selectedFileEntry ]! !
+
+!RopeTextEditor class methodsFor: 'file reader registration' stamp: 'KenD 4/24/2016 16:52'!
+unload
+"
+	self unload.
+"
+
+	FileList unregisterFileReader: self ! !
 
 !RopeWrapper methodsFor: 'conversion' stamp: 'KenD 3/6/2013 17:18'!
 asRope
