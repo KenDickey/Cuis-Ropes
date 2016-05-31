@@ -1,6 +1,6 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2783] on 31 May 2016 at 4:20:37.662982 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2783] on 31 May 2016 at 4:33:27.19842 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 12!
+!provides: 'Ropes' 1 13!
 !requires: 'Compression' 1 nil nil!
 !requires: 'Goodies' 1 4 nil!
 !requires: 'Cuis-Base' 42 2621 nil!
@@ -296,12 +296,12 @@ asTextRope
 
 	^ Text string: (self string asRope) runs:(self runs copy)! !
 
-!FileListWindow class methodsFor: '*ropes' stamp: 'KenD 10/31/2015 19:28'!
+!FileListWindow class methodsFor: '*ropes' stamp: 'KenD 5/31/2016 16:32'!
 openRopeFileList
 	"
 	FileListWindow openRopeFileList
 	"
-	FileListWindow open: (RopeFileList new directory: FmDirectoryEntry currentDirectory) label: nil! !
+	FileListWindow open: (RopeFileList new directory: DirectoryEntry currentDirectory) label: nil! !
 
 !RopeTextModel methodsFor: 'commands' stamp: 'KenD 4/23/2013 20:14'!
 acceptContentsFrom: aTextModelMorph
@@ -410,13 +410,13 @@ editing them here.  Accept anyway?' )
 	^true
 ! !
 
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 15:57'!
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 5/31/2016 16:31'!
 saveAs
 	"Answer true if OK, else nil"
 
 	| dialogResult |	
 	dialogResult := (StandardFileMenu new) 
-   					newFileFrom: (FmDirectoryEntry currentDirectory)
+   					newFileFrom: (DirectoryEntry currentDirectory)
 					withPattern: '*' ; 
 					startUpWithCaption: 'Type new file name for save'.
 	
@@ -445,13 +445,13 @@ saveAs: aFileName
 
 ! !
 
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 10/31/2015 16:31'!
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 5/31/2016 16:31'!
 saveToNewFileNotifying: aTextModelMorph
 	"Answer true if OK, else nil"
 
 	| dialogResult |	
 	dialogResult := (StandardFileMenu new) 
-   					newFileFrom: (FmDirectoryEntry currentDirectory)
+   					newFileFrom: (DirectoryEntry currentDirectory)
 					withPattern: '*' ; 
 					startUpWithCaption: 'Type new file name for save'.
 	
@@ -500,7 +500,7 @@ fromFile: aFileName
 
 	^self new initialize fromFile: aFileName! !
 
-!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 10/31/2015 20:06'!
+!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 5/31/2016 16:32'!
 fromUser
 	"Put up a StandardFileMenu and let the user choose a file to read into me."
 	"Answer an instance of me or nil"
@@ -509,7 +509,7 @@ fromUser
 "	
 	| dialogResult textModel |
 	dialogResult := (StandardFileMenu new)
-						oldFileFrom: (FmDirectoryEntry currentDirectory) ;
+						oldFileFrom: (DirectoryEntry currentDirectory) ;
 	 					startUpWithCaption: 'Select a UTF-8 Unicode text file'.
 	
 	((dialogResult isNil) or: [dialogResult isDirectory]) ifTrue: [ ^nil ].
@@ -3381,7 +3381,7 @@ finalize
 	self fileCleanup.
 	! !
 
-!LazyFileRope methodsFor: 'private' stamp: 'KenD 10/31/2015 16:48'!
+!LazyFileRope methodsFor: 'private' stamp: 'KenD 5/31/2016 16:31'!
 genTempFileName
 	"Answer the name of a file which is different than one that exists"
 	
@@ -3390,7 +3390,7 @@ genTempFileName
 	| dir looking rand fileName |
 	
 	looking := true.
-	dir := FmDirectoryEntry currentDirectory.
+	dir := DirectoryEntry currentDirectory.
 	[looking] whileTrue: [
 		 rand := 777 atRandom: (Random new initialize).
  		 fileName := 'tmp' , rand asString.
