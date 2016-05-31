@@ -1,9 +1,9 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2739] on 24 April 2016 at 6:38:13.417278 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2783] on 31 May 2016 at 4:20:37.662982 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 11!
+!provides: 'Ropes' 1 12!
 !requires: 'Compression' 1 nil nil!
-!requires: 'Cuis-Base' 42 2621 nil!
 !requires: 'Goodies' 1 4 nil!
+!requires: 'Cuis-Base' 42 2621 nil!
 !classDefinition: #RopeTextModel category: #Ropes!
 TextModel subclass: #RopeTextModel
 	instanceVariableNames: 'fileName timeStamp'
@@ -549,15 +549,16 @@ editorClass
 
 	^RopeTextEditor! !
 
-!RopeFileList methodsFor: 'private' stamp: 'KenD 4/24/2013 13:22'!
+!RopeFileList methodsFor: 'private' stamp: 'KenD 5/31/2016 16:17'!
 put: aText
 	"Private - put the supplied text onto the file"
 
-	| fileStream type |
+	| type |
 	((brevityState = #fullFile) or: [brevityState = #briefFile])
-	ifTrue: [fileStream := FileStream newFileNamed: self fullName.
-		Cursor write showWhile: [fileStream nextPutAll: (aText asString asString); close].
-		fileName = fileStream localName 
+	ifTrue: [| aFileEntry |
+		aFileEntry := self fullName asFileEntry.
+		aFileEntry fileContents: (aText asString asString).
+		(fileName = aFileEntry name) 
 			ifTrue: [ acceptedContentsCache _ aText asRope asText]  "@@@UniLazyString@@@"
 			ifFalse: [self updateFileList].		"user renamed the file"
 		^ true  "accepted"].
