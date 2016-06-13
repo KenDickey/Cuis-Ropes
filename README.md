@@ -41,7 +41,7 @@ Or just open the FileList and select a file with suffix '.txt' and use the 'Basi
 
 ### References
 
-- http://en.wikipedia.org/wiki/Rope
+- https://en.wikipedia.org/wiki/Rope_(data_structure)
 - A Python implementation which uses Ropes http://morepypy.blogspot.com/2007/11/ropes-branch-merged.html
 - IBM Java Ropes performance report http://www.ibm.com/developerworks/java/library/j-ropes/index.html
 - 'Ropes: an Alternative to Strings' http://citeseer.ist.psu.edu/viewdoc/downloaddoi=10.1.1.14.9450&rep=rep1&type=pdf
