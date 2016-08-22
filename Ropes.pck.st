@@ -1,9 +1,9 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2783] on 31 May 2016 at 4:33:27.19842 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2850] on 22 August 2016 at 3:53:59 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 13!
+!provides: 'Ropes' 1 14!
 !requires: 'Compression' 1 nil nil!
 !requires: 'Goodies' 1 4 nil!
-!requires: 'Cuis-Base' 42 2621 nil!
+!requires: 'Cuis-Base' 42 2850 nil!
 !classDefinition: #RopeTextModel category: #Ropes!
 TextModel subclass: #RopeTextModel
 	instanceVariableNames: 'fileName timeStamp'
@@ -94,16 +94,6 @@ TextEditor subclass: #RopeTextEditor
 RopeTextEditor class
 	instanceVariableNames: ''!
 
-!classDefinition: #RopeWrapper category: #Ropes!
-Object subclass: #RopeWrapper
-	instanceVariableNames: 'theRope'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Ropes'!
-!classDefinition: 'RopeWrapper class' category: #Ropes!
-RopeWrapper class
-	instanceVariableNames: ''!
-
 !classDefinition: #RopePerformanceTest category: #Ropes!
 TestCase subclass: #RopePerformanceTest
 	instanceVariableNames: ''
@@ -122,6 +112,16 @@ TestCase subclass: #RopeTest
 	category: 'Ropes'!
 !classDefinition: 'RopeTest class' category: #Ropes!
 RopeTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #RopeWrapper category: #Ropes!
+Object subclass: #RopeWrapper
+	instanceVariableNames: 'theRope'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Ropes'!
+!classDefinition: 'RopeWrapper class' category: #Ropes!
+RopeWrapper class
 	instanceVariableNames: ''!
 
 
@@ -189,6 +189,12 @@ I refer to an immutable string shared with another Rope.!
 !RopeTextEditor commentStamp: '<historical>' prior: 0!
 My edits are Ropes rather than Strings.!
 
+!RopePerformanceTest commentStamp: '<historical>' prior: 0!
+Performance Tests for Ropes!
+
+!RopeTest commentStamp: '<historical>' prior: 0!
+Test cases for Ropes!
+
 !RopeWrapper commentStamp: '<historical>' prior: 0!
 Simple wrapper to allow code which expects identity when things are mutated.
 
@@ -207,12 +213,6 @@ Use in place of WriteStream for #nextPut: and #nextPutAll.
 	WriteStream on: 'abc',
 !
 
-!RopePerformanceTest commentStamp: '<historical>' prior: 0!
-Performance Tests for Ropes!
-
-!RopeTest commentStamp: '<historical>' prior: 0!
-Test cases for Ropes!
-
 !Object methodsFor: '*ropes' stamp: 'KenD 3/5/2013 21:43'!
 asRope
 	"Answer a string that represents the receiver."
@@ -224,12 +224,6 @@ asRope
 	"Answer self as a rope"
 
 	^self asString asRope! !
-
-!Array methodsFor: '*ropes' stamp: 'KenD 2/23/2013 20:19'!
-asRope
-	"Elements must be characters. Answer a rope"
-
-	^ (String streamContents: [:s | self do: [ :elt | s nextPut: elt]]) asRope! !
 
 !String methodsFor: '*ropes' stamp: 'KenD 2/9/2013 19:48'!
 asRope
@@ -283,6 +277,12 @@ uppercasingTable
 	"private"
 
 	^UppercasingTable ! !
+
+!Array methodsFor: '*ropes' stamp: 'KenD 2/23/2013 20:19'!
+asRope
+	"Elements must be characters. Answer a rope"
+
+	^ (String streamContents: [:s | self do: [ :elt | s nextPut: elt]]) asRope! !
 
 !Text methodsFor: '*ropes' stamp: 'KenD 2/21/2013 20:23'!
 asRope
@@ -3039,6 +3039,31 @@ value: anInteger
 
 	^ (String with: (Character value: anInteger)) asRope! !
 
+!Rope class methodsFor: 'instance creation' stamp: 'KenD 8/22/2016 15:47:13'!
+with: aString
+
+	^ aString asRope! !
+
+!Rope class methodsFor: 'instance creation' stamp: 'KenD 8/22/2016 15:47:42'!
+with: aString1 with: aString2
+
+	^ aString1 asRope, aString2 asRope! !
+
+!Rope class methodsFor: 'instance creation' stamp: 'KenD 8/22/2016 15:48:02'!
+with: aString1 with: aString2 with: string3
+
+	^ aString1 asRope, aString2 asRope, string3 asRope! !
+
+!Rope class methodsFor: 'instance creation' stamp: 'KenD 8/22/2016 15:48:27'!
+with: aString1 with: aString2 with: string3 with: string4
+
+	^ aString1 asRope, aString2 asRope, string3 asRope, string4 asRope! !
+
+!Rope class methodsFor: 'instance creation' stamp: 'KenD 8/22/2016 15:52:12'!
+withAll: aCollectionOrCharacters
+
+	^ (String withAll: aCollectionOrCharacters) asRope! !
+
 !ConcatRope methodsFor: 'accessing' stamp: 'KenD 2/12/2013 14:05'!
 at: anIndex
 
@@ -3859,56 +3884,6 @@ worldMenuForOpenGroup
 			put: 'A window for composing text';
 		yourself.! !
 
-!RopeWrapper methodsFor: 'conversion' stamp: 'KenD 3/6/2013 17:18'!
-asRope
-
-	^ theRope! !
-
-!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/6/2013 17:11'!
-doesNotUnderstand: aMessage
-	"Delegate operations to theRope and Answer the result.
-	Ir a result is a new rope, remember that as theRope"
-
-	| result |
-	result := aMessage sendTo: theRope.
-	(result isKindOf: Rope)
-	ifTrue: [ theRope := result ].
-	
-	^ result! !
-
-!RopeWrapper methodsFor: 'initialize-release' stamp: 'KenD 3/6/2013 17:17'!
-initialize
-
-	"default"
-	theRope := Rope emptyString.! !
-
-!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/14/2013 19:43'!
-printString
-
-	^theRope printString! !
-
-!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/14/2013 20:23'!
-replaceFrom: start to: stop with: replacement startingAt: repStart 
-		"Answer a new rope with the replacement.
-		Nota Bene: The String method with this name is destructive!!"
-		| repRope |
-		repRope := replacement asRope.
-
-	theRope := theRope copyReplaceFrom: start to: stop with: (repRope copyFrom: repStart to: (repRope size)).
-	
-	^theRope! !
-
-!RopeWrapper methodsFor: 'initialize-release' stamp: 'KenD 3/6/2013 17:14'!
-with: aRope
-	"Initialize theRope"
-
-	theRope := aRope! !
-
-!RopeWrapper class methodsFor: 'instance creation' stamp: 'KenD 3/6/2013 17:13'!
-with: aThing
-
-	^ self basicNew with:( aThing asRope)! !
-
 !RopePerformanceTest methodsFor: 'performance' stamp: 'KenD 2/22/2013 19:43'!
 testConcatTime
 	"self new testConcatTime"
@@ -4664,6 +4639,56 @@ testindexOfstartingAt
 
 	self assert: ('aa aa éé aa aa' asRope indexOf: $a startingAt: 8) = 12.
 	self assert: ('aa aa éé aa aa' asRope indexOf: $z startingAt: 8) = 0.! !
+
+!RopeWrapper methodsFor: 'conversion' stamp: 'KenD 3/6/2013 17:18'!
+asRope
+
+	^ theRope! !
+
+!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/6/2013 17:11'!
+doesNotUnderstand: aMessage
+	"Delegate operations to theRope and Answer the result.
+	Ir a result is a new rope, remember that as theRope"
+
+	| result |
+	result := aMessage sendTo: theRope.
+	(result isKindOf: Rope)
+	ifTrue: [ theRope := result ].
+	
+	^ result! !
+
+!RopeWrapper methodsFor: 'initialize-release' stamp: 'KenD 3/6/2013 17:17'!
+initialize
+
+	"default"
+	theRope := Rope emptyString.! !
+
+!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/14/2013 19:43'!
+printString
+
+	^theRope printString! !
+
+!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/14/2013 20:23'!
+replaceFrom: start to: stop with: replacement startingAt: repStart 
+		"Answer a new rope with the replacement.
+		Nota Bene: The String method with this name is destructive!!"
+		| repRope |
+		repRope := replacement asRope.
+
+	theRope := theRope copyReplaceFrom: start to: stop with: (repRope copyFrom: repStart to: (repRope size)).
+	
+	^theRope! !
+
+!RopeWrapper methodsFor: 'initialize-release' stamp: 'KenD 3/6/2013 17:14'!
+with: aRope
+	"Initialize theRope"
+
+	theRope := aRope! !
+
+!RopeWrapper class methodsFor: 'instance creation' stamp: 'KenD 3/6/2013 17:13'!
+with: aThing
+
+	^ self basicNew with:( aThing asRope)! !
 Rope initialize!
 ConcatRope initialize!
 LazyFileRope initialize!
