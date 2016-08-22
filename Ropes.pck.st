@@ -1,8 +1,8 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2850] on 22 August 2016 at 3:53:59 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2917] on 22 August 2016 at 4:20:49 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 14!
-!requires: 'Compression' 1 nil nil!
+!provides: 'Ropes' 1 15!
 !requires: 'Goodies' 1 4 nil!
+!requires: 'Compression' 1 nil nil!
 !requires: 'Cuis-Base' 42 2850 nil!
 !classDefinition: #RopeTextModel category: #Ropes!
 TextModel subclass: #RopeTextModel
@@ -2136,6 +2136,11 @@ replaceFrom: start to: stop with: replacement startingAt: repStart
 		
 		^ self copyReplaceFrom: start to: stop with: (repRope copyFrom: repStart to: (repRope size)).! !
 
+!Rope methodsFor: 'converting' stamp: 'KenD 8/22/2016 16:13:35'!
+reversed
+
+       ^ Rope fromString: (self asString reversed)! !
+
 !Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:42'!
 romanNumber
 	"Answer integer from roman number"
@@ -3223,6 +3228,11 @@ with:  aRope with: otherRope
 
 	^ self concatenate: aRope with: otherRope ! !
 
+!ConcatRope class methodsFor: 'instance creation' stamp: 'KenD 8/22/2016 16:14:43'!
+withLeft: aRope andRight: anotherRope
+
+	^ self with: aRope with: anotherRope! !
+
 !FlatRope methodsFor: 'accessing' stamp: 'KenD 2/8/2013 16:45'!
 at: anIndex
 	
@@ -3249,7 +3259,7 @@ at: index put: aCharacter
 	   aCharacter asRope ,
 	   (self copyFrom: (index + 1) to: (self size))! !
 
-!FlatRope methodsFor: 'copying' stamp: 'KenD 2/23/2013 13:51'!
+!FlatRope methodsFor: 'copying' stamp: 'KenD 8/22/2016 16:16:22'!
 copyFrom: start to: stop 
 	"Answer a Rope."
 
@@ -3261,7 +3271,7 @@ copyFrom: start to: stop
 	
 	((1 <= start) and: [stop <= self size])
 	ifTrue: [
-		^(SubRope new initialize 
+		^(SubRope 
 			string: (self theString) startIndex: start length: (stop - start + 1))
 	]
 	ifFalse: [
@@ -3288,12 +3298,12 @@ size
 	
 	^self theString size! !
 
-!FlatRope methodsFor: 'accessing' stamp: 'KenD 2/8/2013 19:55'!
+!FlatRope methodsFor: 'accessing' stamp: 'KenD 8/22/2016 16:16:30'!
 substringFrom: startIndex length: numChars
 
 	((0 <= startIndex) and: [startIndex + numChars <= self size])
 	ifTrue: [
-		^(SubRope new initialize string: (self string) startIndex: startIndex length: numChars)
+		^(SubRope string: (self string) startIndex: startIndex length: numChars)
 	]
 	ifFalse: [self errorSubscriptBounds: startIndex]! !
 
@@ -3642,7 +3652,7 @@ at: index put: aCharacter
 	   aCharacter asRope ,
 	   (self copyFrom: (index + 1) to: self size )! !
 
-!SubRope methodsFor: 'copying' stamp: 'KenD 2/23/2013 13:53'!
+!SubRope methodsFor: 'copying' stamp: 'KenD 8/22/2016 16:16:54'!
 copyFrom: start to: stop 
 	"Answer a SubRope which shares my string"
 	
@@ -3655,7 +3665,7 @@ copyFrom: start to: stop
 
 	((1 <= start) and: [stop <= (self string size)])
 	ifTrue: [
-		^(SubRope new initialize 
+		^(SubRope 
 			string: (self string) 
 			startIndex: offsetStart
 			length: (stop - start + 1))
@@ -3712,6 +3722,12 @@ string: aString startIndex: anIndex length: numberOfChars
 	ifTrue: [self errorSubscriptBounds: anIndex].
 	
 	^self! !
+
+!SubRope class methodsFor: 'instance creation' stamp: 'KenD 8/22/2016 16:15:41'!
+string: aString startIndex: anIndex length: numberOfChars
+	"Private"
+	
+	^ self new string: aString startIndex: anIndex length: numberOfChars! !
 
 !RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 4/24/2016 15:35'!
 save
@@ -4021,7 +4037,7 @@ testWriteStreamOnRope
 "
 	! !
 
-!RopeTest methodsFor: 'initialize-release' stamp: 'KenD 2/23/2013 19:14'!
+!RopeTest methodsFor: 'initialize-release' stamp: 'KenD 8/22/2016 16:16:44'!
 setUp
 
 	"Set up class variables (before each test)."
@@ -4030,7 +4046,7 @@ setUp
 	testString := '1234abcd5678hijk90lm'.
 	flatRope := FlatRope fromString: testString.
 	"Build SubRope by hand as we need to test constructor"
-	subRope := SubRope new initialize string: testString startIndex: 5 length: 12.
+	subRope := SubRope string: testString startIndex: 5 length: 12.
 	concRope1 := ConcatRope concatenate: subRope with: (' new string tail' asRope).
 	concRope2 := ConcatRope concatenate: concRope1 with:concRope1.
 	concRope3 := ConcatRope concatenate: ('Now is the time ' asRope) with: subRope.
