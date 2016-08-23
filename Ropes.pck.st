@@ -1,6 +1,6 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2917] on 22 August 2016 at 4:20:49 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2917] on 22 August 2016 at 5:12:59 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 15!
+!provides: 'Ropes' 1 17!
 !requires: 'Goodies' 1 4 nil!
 !requires: 'Compression' 1 nil nil!
 !requires: 'Cuis-Base' 42 2850 nil!
@@ -25,7 +25,7 @@ RopeFileList class
 	instanceVariableNames: ''!
 
 !classDefinition: #Rope category: #Ropes!
-ArrayedCollection subclass: #Rope
+SequenceableCollection subclass: #Rope
 	instanceVariableNames: ''
 	classVariableNames: 'EmptyRope Fibonacci MaxRopeDepth'
 	poolDictionaries: ''
@@ -694,12 +694,12 @@ asDate
 
 	^ Date fromString: self! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:11'!
+!Rope methodsFor: 'converting' stamp: 'KenD 8/22/2016 17:00:01'!
 asFileName
 	"Answer a String made up from the receiver that is an acceptable file 
 	name."
 
-	^FileDirectory checkName: self fixErrors: true! !
+	^FileIOAccessor checkName: self fixErrors: true! !
 
 !Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:11'!
 asFourCode
@@ -1220,6 +1220,11 @@ correctAgainstEnumerator: wordBlock continuedFrom: oldCollection
 crc16
 	
 	^ self asString crc16! !
+
+!Rope methodsFor: 'private' stamp: 'KenD 8/22/2016 17:08:33'!
+defaultElement
+
+	^ Character space! !
 
 !Rope methodsFor: 'displaying' stamp: 'KenD 2/22/2013 20:21'!
 displayAt: aPoint 
@@ -2190,6 +2195,11 @@ select: aBlock
 separateKeywords
 
 	^ (self , ' ')! !
+
+!Rope methodsFor: 'enumerating' stamp: 'KenD 8/22/2016 17:11:29'!
+size
+
+	^0! !
 
 !Rope methodsFor: 'accessing' stamp: 'KenD 2/22/2013 20:17'!
 skipAnySubStr: delimiters startingAt: start 
