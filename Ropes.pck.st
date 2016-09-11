@@ -1,6 +1,6 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2935] on 10 September 2016 at 5:49:54 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2935] on 11 September 2016 at 4:18:28 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 19!
+!provides: 'Ropes' 1 20!
 !requires: 'Compression' 1 nil nil!
 !requires: 'Goodies' 1 4 nil!
 !requires: 'Cuis-Base' 42 2935 nil!
@@ -218,11 +218,6 @@ asRope
 	"Answer a string that represents the receiver."
 
 	^ self printString asRope! !
-
-!Character methodsFor: '*ropes' stamp: 'KenD 9/10/2016 16:58:03'!
-asInteger
-
-	^ self codePoint! !
 
 !Character methodsFor: '*ropes' stamp: 'KenD 2/9/2013 20:08'!
 asRope
@@ -3784,10 +3779,12 @@ save
 		 ifNil: [ self saveAs ].
 	^true! !
 
-!RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 4/24/2016 15:36'!
+!RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 9/11/2016 16:11:23'!
 save: aKeyboardEvent
 	"Save keystroke"
-	^self save! !
+	
+	self acceptContents.
+	^ true! !
 
 !RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 4/24/2016 15:34'!
 saveAs
