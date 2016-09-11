@@ -1,9 +1,29 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2850] on 23 August 2016 at 6:54:46 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2935] on 10 September 2016 at 5:49:54 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 18!
-!requires: 'Cuis-Base' 42 2850 nil!
-!requires: 'Goodies' 1 4 nil!
+!provides: 'Ropes' 1 19!
 !requires: 'Compression' 1 nil nil!
+!requires: 'Goodies' 1 4 nil!
+!requires: 'Cuis-Base' 42 2935 nil!
+!classDefinition: #RopeTextModel category: #Ropes!
+TextModel subclass: #RopeTextModel
+	instanceVariableNames: 'fileName timeStamp'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Ropes'!
+!classDefinition: 'RopeTextModel class' category: #Ropes!
+RopeTextModel class
+	instanceVariableNames: ''!
+
+!classDefinition: #RopeFileList category: #Ropes!
+FileList subclass: #RopeFileList
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Ropes'!
+!classDefinition: 'RopeFileList class' category: #Ropes!
+RopeFileList class
+	instanceVariableNames: ''!
+
 !classDefinition: #Rope category: #Ropes!
 SequenceableCollection subclass: #Rope
 	instanceVariableNames: ''
@@ -64,36 +84,6 @@ Rope subclass: #SubRope
 SubRope class
 	instanceVariableNames: ''!
 
-!classDefinition: #RopeTextModel category: #Ropes!
-TextModel subclass: #RopeTextModel
-	instanceVariableNames: 'fileName timeStamp'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Ropes'!
-!classDefinition: 'RopeTextModel class' category: #Ropes!
-RopeTextModel class
-	instanceVariableNames: ''!
-
-!classDefinition: #RopeFileList category: #Ropes!
-FileList subclass: #RopeFileList
-	instanceVariableNames: ''
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Ropes'!
-!classDefinition: 'RopeFileList class' category: #Ropes!
-RopeFileList class
-	instanceVariableNames: ''!
-
-!classDefinition: #RopeWrapper category: #Ropes!
-Object subclass: #RopeWrapper
-	instanceVariableNames: 'theRope'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Ropes'!
-!classDefinition: 'RopeWrapper class' category: #Ropes!
-RopeWrapper class
-	instanceVariableNames: ''!
-
 !classDefinition: #RopeTextEditor category: #Ropes!
 TextEditor subclass: #RopeTextEditor
 	instanceVariableNames: ''
@@ -124,6 +114,28 @@ TestCase subclass: #RopeTest
 RopeTest class
 	instanceVariableNames: ''!
 
+!classDefinition: #RopeWrapper category: #Ropes!
+Object subclass: #RopeWrapper
+	instanceVariableNames: 'theRope'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Ropes'!
+!classDefinition: 'RopeWrapper class' category: #Ropes!
+RopeWrapper class
+	instanceVariableNames: ''!
+
+
+!RopeTextModel commentStamp: '<historical>' prior: 0!
+I am a TextModel which uses Ropes in place of Strings.
+
+fileName is the fullName of a file or nil.
+timeStamp is zero or the time the file was read to create a view.
+
+If a user goes to save a file, the timeStamp should not have changed.!
+
+!RopeFileList commentStamp: '<historical>' prior: 0!
+I am a FileList which uses LazyFileRopes to display file contents.
+!
 
 !Rope commentStamp: '<historical>' prior: 0!
 I am the abstract class of immutable strings known as Ropes.
@@ -174,17 +186,14 @@ I am a Rope consisting of a single char repeated count times.
 !SubRope commentStamp: '<historical>' prior: 0!
 I refer to an immutable string shared with another Rope.!
 
-!RopeTextModel commentStamp: '<historical>' prior: 0!
-I am a TextModel which uses Ropes in place of Strings.
+!RopeTextEditor commentStamp: '<historical>' prior: 0!
+My edits are Ropes rather than Strings.!
 
-fileName is the fullName of a file or nil.
-timeStamp is zero or the time the file was read to create a view.
+!RopePerformanceTest commentStamp: '<historical>' prior: 0!
+Performance Tests for Ropes!
 
-If a user goes to save a file, the timeStamp should not have changed.!
-
-!RopeFileList commentStamp: '<historical>' prior: 0!
-I am a FileList which uses LazyFileRopes to display file contents.
-!
+!RopeTest commentStamp: '<historical>' prior: 0!
+Test cases for Ropes!
 
 !RopeWrapper commentStamp: '<historical>' prior: 0!
 Simple wrapper to allow code which expects identity when things are mutated.
@@ -204,26 +213,27 @@ Use in place of WriteStream for #nextPut: and #nextPutAll.
 	WriteStream on: 'abc',
 !
 
-!RopeTextEditor commentStamp: '<historical>' prior: 0!
-My edits are Ropes rather than Strings.!
-
-!RopePerformanceTest commentStamp: '<historical>' prior: 0!
-Performance Tests for Ropes!
-
-!RopeTest commentStamp: '<historical>' prior: 0!
-Test cases for Ropes!
-
 !Object methodsFor: '*ropes' stamp: 'KenD 3/5/2013 21:43'!
 asRope
 	"Answer a string that represents the receiver."
 
 	^ self printString asRope! !
 
-!Array methodsFor: '*ropes' stamp: 'KenD 2/23/2013 20:19'!
-asRope
-	"Elements must be characters. Answer a rope"
+!Character methodsFor: '*ropes' stamp: 'KenD 9/10/2016 16:58:03'!
+asInteger
 
-	^ (String streamContents: [:s | self do: [ :elt | s nextPut: elt]]) asRope! !
+	^ self codePoint! !
+
+!Character methodsFor: '*ropes' stamp: 'KenD 2/9/2013 20:08'!
+asRope
+	"Answer self as a rope"
+
+	^self asString asRope! !
+
+!String methodsFor: '*ropes' stamp: 'KenD 9/10/2016 17:08:36'!
+appendToRope: aRope
+
+	^ ConcatRope concatenate: aRope with: self asRope! !
 
 !String methodsFor: '*ropes' stamp: 'KenD 2/9/2013 19:48'!
 asRope
@@ -278,6 +288,17 @@ uppercasingTable
 
 	^UppercasingTable ! !
 
+!Array methodsFor: '*ropes' stamp: 'KenD 2/23/2013 20:19'!
+asRope
+	"Elements must be characters. Answer a rope"
+
+	^ (String streamContents: [:s | self do: [ :elt | s nextPut: elt]]) asRope! !
+
+!Text methodsFor: '*ropes' stamp: 'KenD 9/10/2016 16:55:31'!
+appendToRope: aRope
+
+	^ self asTextRope appendToText: aRope asTextRope! !
+
 !Text methodsFor: '*ropes' stamp: 'KenD 2/21/2013 20:23'!
 asRope
 	"Answer my string as a Rope"
@@ -290,12 +311,6 @@ asTextRope
 
 	^ Text string: (self string asRope) runs:(self runs copy)! !
 
-!Character methodsFor: '*ropes' stamp: 'KenD 2/9/2013 20:08'!
-asRope
-	"Answer self as a rope"
-
-	^self asString asRope! !
-
 !FileListWindow class methodsFor: '*ropes' stamp: 'KenD 5/31/2016 16:32'!
 openRopeFileList
 	"
@@ -303,9 +318,297 @@ openRopeFileList
 	"
 	FileListWindow open: (RopeFileList new directory: DirectoryEntry currentDirectory) label: nil! !
 
-!Rope methodsFor: 'copying' stamp: 'KenD 2/9/2013 19:55'!
-, aRopeOrString
-	^ (ConcatRope concatenate: self with: aRopeOrString).! !
+!RopeTextModel methodsFor: 'commands' stamp: 'KenD 4/23/2013 20:14'!
+acceptContentsFrom: aTextModelMorph
+	"The user has typed Cmd+s -> Accept.
+	Update backing file (query if needed).
+	Answer true if OK, else false."
+	
+	(fileName isNil)
+	ifTrue: [ ^(self saveToNewFileNotifying: aTextModelMorph) isNil not ]
+	ifFalse: [ ^(self saveToOldFileNotifying: aTextModelMorph) isNil not ]! !
+
+!RopeTextModel methodsFor: 'accessing' stamp: 'KenD 4/23/2013 20:13'!
+actualContents: aTextOrString
+	"Reset contents"
+
+	(actualContents class = LazyFileRope)
+		ifTrue: [ actualContents fileCleanup ]. "Remove old tmp file"
+	actualContents _ aTextOrString ifNotNil: [ aTextOrString asRope asText ].
+	undoRedoCommands resetToStart.
+	self changed: #actualContents! !
+
+!RopeTextModel methodsFor: 'accessing' stamp: 'KenD 4/23/2013 20:13'!
+basicActualContents: aTextOrString
+	"Do not throw events... Not nice... Use with care... Clean some day..."
+	actualContents _ aTextOrString ifNotNil: [ aTextOrString asRope asText ].
+	undoRedoCommands resetToStart.! !
+
+!RopeTextModel methodsFor: 'accessing' stamp: 'KenD 4/23/2013 20:13'!
+editorClass
+
+	^RopeTextEditor! !
+
+!RopeTextModel methodsFor: 'accessing' stamp: 'KenD 4/23/2013 20:13'!
+fileName
+
+	^ fileName! !
+
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 16:32'!
+fromFile: aFileName
+	"Open the file aFileName if possible and read the file into actualContents.
+	Answer self if successful else nil."
+	
+	| aFile |
+	(aFileName isEmpty) ifFalse: [
+		aFile := aFileName asFileEntry.
+		((aFile exists) and: [ aFile isFile ]) ifTrue: [
+			"Found a non-directory file; assume reable UTF-8"
+			fileName := aFileName.
+			timeStamp := aFile modificationTime .
+			actualContents := (aFileName asFileEntry fileContents asRope) asText.
+			^self
+		]
+	].
+	"Not a readable file"
+	^nil
+
+			! !
+
+!RopeTextModel methodsFor: 'initialize-release' stamp: 'KenD 4/23/2013 20:11'!
+initialize
+	"Initialize the state of the receiver with its default contents."
+
+	actualContents _ Rope emptyString asText.
+	timeStamp := 0.
+	self flushUndoRedoCommands! !
+
+!RopeTextModel methodsFor: 'initialize-release' stamp: 'KenD 4/23/2013 20:11'!
+openLabel: aString 
+	"Create a standard system view of the model, me, and open it."
+	
+	SystemWindow editText: self label: aString asRope wrap: true! !
+
+!RopeTextModel methodsFor: 'misc' stamp: 'KenD 4/24/2016 16:33'!
+refetch
+	"Answer true if actualContents was actually fetched."
+	
+	(self fileName) ifNotNil: [ | dirEntry  |	
+		"Reset timeStamp"
+		dirEntry :=  fileName asFileEntry .
+		timeStamp := dirEntry modificationTime.
+		"(Re)read contents"
+		actualContents := (dirEntry fileContents asRope) asText.
+	].
+
+	self changed: #refetched.
+		
+	^true! !
+
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 16:01'!
+save
+	"Answer true if OK, else nil"
+
+	| dirEntry  |	
+	dirEntry :=  fileName asFileEntry.
+	(timeStamp = dirEntry modificationTime) 
+	ifFalse: [
+		(self confirm: 
+'Caution!! Contents were saved
+elsewhere since you started
+editing them here.  Accept anyway?' ) 
+		ifFalse: [ ^nil ]
+	].
+				
+	dirEntry fileContents: (self actualContents asString asString).
+	timeStamp := dirEntry modificationTime.
+	^true
+! !
+
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 5/31/2016 16:31'!
+saveAs
+	"Answer true if OK, else nil"
+
+	| dialogResult |	
+	dialogResult := (StandardFileMenu new) 
+   					newFileFrom: (DirectoryEntry currentDirectory)
+					withPattern: '*' ; 
+					startUpWithCaption: 'Type new file name for save'.
+	
+	(dialogResult isNil)
+	ifTrue: [ ^nil ]
+	ifFalse: [
+		dialogResult directory
+				 at: dialogResult name
+				 put: self actualContents asString asString.
+
+		timeStamp := (dialogResult directory
+				 		name: dialogResult name) modificationTime.
+		^true
+	]! !
+
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 16:38'!
+saveAs: aFileName
+	"Answer true if OK, else nil"
+	
+	| dirEntry  |	
+	fileName := aFileName.
+	dirEntry :=  fileName asFileEntry.		
+	dirEntry fileContents: (self actualContents asString asString).
+	timeStamp := dirEntry modificationTime.
+	^true
+
+! !
+
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 5/31/2016 16:31'!
+saveToNewFileNotifying: aTextModelMorph
+	"Answer true if OK, else nil"
+
+	| dialogResult |	
+	dialogResult := (StandardFileMenu new) 
+   					newFileFrom: (DirectoryEntry currentDirectory)
+					withPattern: '*' ; 
+					startUpWithCaption: 'Type new file name for save'.
+	
+	(dialogResult isNil)
+	ifTrue: [ ^nil ]
+	ifFalse: [
+		dialogResult directory
+				 at: dialogResult name
+				 put: self actualContents asString asString.
+
+		timeStamp := (dialogResult directory
+				 		name: dialogResult name) modificationTime.
+		"@@@FIXME Notify aTextModelMorph"
+		^true
+	]! !
+
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 15:56'!
+saveToOldFileNotifying: aTextModelMorph
+	"Answer true if OK, else nil"
+
+	| dirEntry  |	
+	dirEntry :=  fileName asFileEntry.
+	(timeStamp = dirEntry  modificationTime) 
+	ifFalse: [
+		(self confirm: 
+'Caution!! Contents were saved
+elsewhere since you started
+editing them here.  Accept anyway?' ) 
+		ifFalse: [ aTextModelMorph flash. ^nil ]
+	].
+				
+	dirEntry fileContents: (self actualContents asString).
+	timeStamp := fileName asFileEntry modificationTime.
+	"@@@FIXME Notify aTextModelMorph"
+	^true
+! !
+
+!RopeTextModel methodsFor: 'accessing' stamp: 'KenD 4/23/2013 20:14'!
+timeStamp
+
+	^ timeStamp! !
+
+!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 4/23/2013 20:15'!
+fromFile: aFileName
+	"Answer an instance of me if aFileName denotes a readable text file, else nil"
+
+	^self new initialize fromFile: aFileName! !
+
+!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 5/31/2016 16:32'!
+fromUser
+	"Put up a StandardFileMenu and let the user choose a file to read into me."
+	"Answer an instance of me or nil"
+"
+	RopeTextModel fromUser.
+"	
+	| dialogResult textModel |
+	dialogResult := (StandardFileMenu new)
+						oldFileFrom: (DirectoryEntry currentDirectory) ;
+	 					startUpWithCaption: 'Select a UTF-8 Unicode text file'.
+	
+	((dialogResult isNil) or: [dialogResult isDirectory]) ifTrue: [ ^nil ].
+
+	textModel := self new initialize 
+		fromFile: ( (dialogResult directory pathName) , '/' , (dialogResult name) ).
+		
+	SystemWindow 
+		editText: textModel
+			label: 'Text Editor (''',  (dialogResult name) ,  ''')'
+			wrap: true.
+	
+	^ textModel! !
+
+!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 4/23/2013 20:15'!
+openLabel: aString
+
+	self new openLabel: aString asRope! !
+
+!RopeFileList methodsFor: 'private' stamp: 'KenD 4/24/2016 16:31'!
+defaultContents
+	acceptedContentsCache := (list
+		ifNil: [ acceptedContentsCache := (Rope emptyRope) asText ]
+		ifNotNil: [
+			(String streamContents:
+				[:s | s nextPutAll: 'NO FILE SELECTED'; newLine.
+				 s nextPutAll: '  -- Folder Summary --'; newLine.
+				 list do: [:item | s nextPutAll: item; newLine]] 
+			) asRope
+		]
+	).
+	brevityState _ #FileList.
+	^ acceptedContentsCache! !
+
+!RopeFileList methodsFor: 'file list menu' stamp: 'KenD 4/23/2013 20:25'!
+editorClass
+
+	^RopeTextEditor! !
+
+!RopeFileList methodsFor: 'private' stamp: 'KenD 5/31/2016 16:17'!
+put: aText
+	"Private - put the supplied text onto the file"
+
+	| type |
+	((brevityState = #fullFile) or: [brevityState = #briefFile])
+	ifTrue: [| aFileEntry |
+		aFileEntry := self fullName asFileEntry.
+		aFileEntry fileContents: (aText asString asString).
+		(fileName = aFileEntry name) 
+			ifTrue: [ acceptedContentsCache _ aText asRope asText]  "@@@UniLazyString@@@"
+			ifFalse: [self updateFileList].		"user renamed the file"
+		^ true  "accepted"].
+
+	listIndex = 0 ifTrue:
+		[self inform: 'No fileName is selected'.
+		^ false  "failed"].
+	type _ 'These'.
+	brevityState = #briefHex ifTrue: [type _ 'Abbreviated'].
+	brevityState = #fullHex ifTrue: [type _ 'Hexadecimal'].
+	brevityState = #FileList ifTrue: [type _ 'Directory'].
+	self inform: ('{1} contents cannot
+meaningfully be saved at present.' format:{type}).
+	^ false  "failed"
+! !
+
+!RopeFileList methodsFor: 'private' stamp: 'KenD 4/24/2016 16:30'!
+readContentsBrief: ignoredBrevityFlag
+	"Read the contents of the receiver's selected file.
+	  Don't create a file here.  Check if exists."
+	| fileEntry |
+
+	fileEntry := self fullName asFileEntry.
+
+	fileEntry exists 
+		ifFalse: [ ^ 'For some reason, this file cannot be read' ].
+	
+	brevityState := #fullFile.
+	
+	^ acceptedContentsCache := (fileEntry contents asRope) asText
+	! !
+
+!Rope methodsFor: 'copying' stamp: 'KenD 9/10/2016 16:50:00'!
+, aRopeOrStringOrText
+	^ aRopeOrStringOrText appendToRope: self! !
 
 !Rope methodsFor: 'comparing' stamp: 'KenD 2/21/2013 20:16'!
 < aStringOrRope 
@@ -374,6 +677,26 @@ alike: aStringOrRope
 		[((super at: j) bitAnd: 16rDF) = ((aStringOrRope at: k) asciiValue bitAnd: 16rDF)]]]
 			whileTrue: [ j _ j - 1.  k _ k - 1. ].
 	^ i - 1 + self size - j + bonus. ! !
+
+!Rope methodsFor: 'copying' stamp: 'KenD 9/10/2016 16:46:27'!
+append: aStringOrText
+
+	^ aStringOrText appendToRope: self! !
+
+!Rope methodsFor: 'copying' stamp: 'KenD 9/10/2016 17:00:49'!
+appendToRope: aRope
+
+	^ ConcatRope concatenate: aRope with: self! !
+
+!Rope methodsFor: 'copying' stamp: 'KenD 9/10/2016 17:00:32'!
+appendToString: aString
+
+	^ ConcatRope concatenate: aString asRope with: self! !
+
+!Rope methodsFor: 'copying' stamp: 'KenD 9/10/2016 17:00:13'!
+appendToText: aText
+
+	^  self asTextRope appendToText:  aText asTextRope ! !
 
 !Rope methodsFor: 'converting' stamp: 'KenD 2/23/2013 19:17'!
 asCamelCase
@@ -3451,344 +3774,6 @@ string: aString startIndex: anIndex length: numberOfChars
 	
 	^ self new string: aString startIndex: anIndex length: numberOfChars! !
 
-!RopeTextModel methodsFor: 'commands' stamp: 'KenD 4/23/2013 20:14'!
-acceptContentsFrom: aTextModelMorph
-	"The user has typed Cmd+s -> Accept.
-	Update backing file (query if needed).
-	Answer true if OK, else false."
-	
-	(fileName isNil)
-	ifTrue: [ ^(self saveToNewFileNotifying: aTextModelMorph) isNil not ]
-	ifFalse: [ ^(self saveToOldFileNotifying: aTextModelMorph) isNil not ]! !
-
-!RopeTextModel methodsFor: 'accessing' stamp: 'KenD 4/23/2013 20:13'!
-actualContents: aTextOrString
-	"Reset contents"
-
-	(actualContents class = LazyFileRope)
-		ifTrue: [ actualContents fileCleanup ]. "Remove old tmp file"
-	actualContents _ aTextOrString ifNotNil: [ aTextOrString asRope asText ].
-	undoRedoCommands resetToStart.
-	self changed: #actualContents! !
-
-!RopeTextModel methodsFor: 'accessing' stamp: 'KenD 4/23/2013 20:13'!
-basicActualContents: aTextOrString
-	"Do not throw events... Not nice... Use with care... Clean some day..."
-	actualContents _ aTextOrString ifNotNil: [ aTextOrString asRope asText ].
-	undoRedoCommands resetToStart.! !
-
-!RopeTextModel methodsFor: 'accessing' stamp: 'KenD 4/23/2013 20:13'!
-editorClass
-
-	^RopeTextEditor! !
-
-!RopeTextModel methodsFor: 'accessing' stamp: 'KenD 4/23/2013 20:13'!
-fileName
-
-	^ fileName! !
-
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 16:32'!
-fromFile: aFileName
-	"Open the file aFileName if possible and read the file into actualContents.
-	Answer self if successful else nil."
-	
-	| aFile |
-	(aFileName isEmpty) ifFalse: [
-		aFile := aFileName asFileEntry.
-		((aFile exists) and: [ aFile isFile ]) ifTrue: [
-			"Found a non-directory file; assume reable UTF-8"
-			fileName := aFileName.
-			timeStamp := aFile modificationTime .
-			actualContents := (aFileName asFileEntry fileContents asRope) asText.
-			^self
-		]
-	].
-	"Not a readable file"
-	^nil
-
-			! !
-
-!RopeTextModel methodsFor: 'initialize-release' stamp: 'KenD 4/23/2013 20:11'!
-initialize
-	"Initialize the state of the receiver with its default contents."
-
-	actualContents _ Rope emptyString asText.
-	timeStamp := 0.
-	self flushUndoRedoCommands! !
-
-!RopeTextModel methodsFor: 'initialize-release' stamp: 'KenD 4/23/2013 20:11'!
-openLabel: aString 
-	"Create a standard system view of the model, me, and open it."
-	
-	SystemWindow editText: self label: aString asRope wrap: true! !
-
-!RopeTextModel methodsFor: 'misc' stamp: 'KenD 4/24/2016 16:33'!
-refetch
-	"Answer true if actualContents was actually fetched."
-	
-	(self fileName) ifNotNil: [ | dirEntry  |	
-		"Reset timeStamp"
-		dirEntry :=  fileName asFileEntry .
-		timeStamp := dirEntry modificationTime.
-		"(Re)read contents"
-		actualContents := (dirEntry fileContents asRope) asText.
-	].
-
-	self changed: #refetched.
-		
-	^true! !
-
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 16:01'!
-save
-	"Answer true if OK, else nil"
-
-	| dirEntry  |	
-	dirEntry :=  fileName asFileEntry.
-	(timeStamp = dirEntry modificationTime) 
-	ifFalse: [
-		(self confirm: 
-'Caution!! Contents were saved
-elsewhere since you started
-editing them here.  Accept anyway?' ) 
-		ifFalse: [ ^nil ]
-	].
-				
-	dirEntry fileContents: (self actualContents asString asString).
-	timeStamp := dirEntry modificationTime.
-	^true
-! !
-
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 5/31/2016 16:31'!
-saveAs
-	"Answer true if OK, else nil"
-
-	| dialogResult |	
-	dialogResult := (StandardFileMenu new) 
-   					newFileFrom: (DirectoryEntry currentDirectory)
-					withPattern: '*' ; 
-					startUpWithCaption: 'Type new file name for save'.
-	
-	(dialogResult isNil)
-	ifTrue: [ ^nil ]
-	ifFalse: [
-		dialogResult directory
-				 at: dialogResult name
-				 put: self actualContents asString asString.
-
-		timeStamp := (dialogResult directory
-				 		name: dialogResult name) modificationTime.
-		^true
-	]! !
-
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 16:38'!
-saveAs: aFileName
-	"Answer true if OK, else nil"
-	
-	| dirEntry  |	
-	fileName := aFileName.
-	dirEntry :=  fileName asFileEntry.		
-	dirEntry fileContents: (self actualContents asString asString).
-	timeStamp := dirEntry modificationTime.
-	^true
-
-! !
-
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 5/31/2016 16:31'!
-saveToNewFileNotifying: aTextModelMorph
-	"Answer true if OK, else nil"
-
-	| dialogResult |	
-	dialogResult := (StandardFileMenu new) 
-   					newFileFrom: (DirectoryEntry currentDirectory)
-					withPattern: '*' ; 
-					startUpWithCaption: 'Type new file name for save'.
-	
-	(dialogResult isNil)
-	ifTrue: [ ^nil ]
-	ifFalse: [
-		dialogResult directory
-				 at: dialogResult name
-				 put: self actualContents asString asString.
-
-		timeStamp := (dialogResult directory
-				 		name: dialogResult name) modificationTime.
-		"@@@FIXME Notify aTextModelMorph"
-		^true
-	]! !
-
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 15:56'!
-saveToOldFileNotifying: aTextModelMorph
-	"Answer true if OK, else nil"
-
-	| dirEntry  |	
-	dirEntry :=  fileName asFileEntry.
-	(timeStamp = dirEntry  modificationTime) 
-	ifFalse: [
-		(self confirm: 
-'Caution!! Contents were saved
-elsewhere since you started
-editing them here.  Accept anyway?' ) 
-		ifFalse: [ aTextModelMorph flash. ^nil ]
-	].
-				
-	dirEntry fileContents: (self actualContents asString).
-	timeStamp := fileName asFileEntry modificationTime.
-	"@@@FIXME Notify aTextModelMorph"
-	^true
-! !
-
-!RopeTextModel methodsFor: 'accessing' stamp: 'KenD 4/23/2013 20:14'!
-timeStamp
-
-	^ timeStamp! !
-
-!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 4/23/2013 20:15'!
-fromFile: aFileName
-	"Answer an instance of me if aFileName denotes a readable text file, else nil"
-
-	^self new initialize fromFile: aFileName! !
-
-!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 5/31/2016 16:32'!
-fromUser
-	"Put up a StandardFileMenu and let the user choose a file to read into me."
-	"Answer an instance of me or nil"
-"
-	RopeTextModel fromUser.
-"	
-	| dialogResult textModel |
-	dialogResult := (StandardFileMenu new)
-						oldFileFrom: (DirectoryEntry currentDirectory) ;
-	 					startUpWithCaption: 'Select a UTF-8 Unicode text file'.
-	
-	((dialogResult isNil) or: [dialogResult isDirectory]) ifTrue: [ ^nil ].
-
-	textModel := self new initialize 
-		fromFile: ( (dialogResult directory pathName) , '/' , (dialogResult name) ).
-		
-	SystemWindow 
-		editText: textModel
-			label: 'Text Editor (''',  (dialogResult name) ,  ''')'
-			wrap: true.
-	
-	^ textModel! !
-
-!RopeTextModel class methodsFor: 'instance creation' stamp: 'KenD 4/23/2013 20:15'!
-openLabel: aString
-
-	self new openLabel: aString asRope! !
-
-!RopeFileList methodsFor: 'private' stamp: 'KenD 4/24/2016 16:31'!
-defaultContents
-	acceptedContentsCache := (list
-		ifNil: [ acceptedContentsCache := (Rope emptyRope) asText ]
-		ifNotNil: [
-			(String streamContents:
-				[:s | s nextPutAll: 'NO FILE SELECTED'; newLine.
-				 s nextPutAll: '  -- Folder Summary --'; newLine.
-				 list do: [:item | s nextPutAll: item; newLine]] 
-			) asRope
-		]
-	).
-	brevityState _ #FileList.
-	^ acceptedContentsCache! !
-
-!RopeFileList methodsFor: 'file list menu' stamp: 'KenD 4/23/2013 20:25'!
-editorClass
-
-	^RopeTextEditor! !
-
-!RopeFileList methodsFor: 'private' stamp: 'KenD 5/31/2016 16:17'!
-put: aText
-	"Private - put the supplied text onto the file"
-
-	| type |
-	((brevityState = #fullFile) or: [brevityState = #briefFile])
-	ifTrue: [| aFileEntry |
-		aFileEntry := self fullName asFileEntry.
-		aFileEntry fileContents: (aText asString asString).
-		(fileName = aFileEntry name) 
-			ifTrue: [ acceptedContentsCache _ aText asRope asText]  "@@@UniLazyString@@@"
-			ifFalse: [self updateFileList].		"user renamed the file"
-		^ true  "accepted"].
-
-	listIndex = 0 ifTrue:
-		[self inform: 'No fileName is selected'.
-		^ false  "failed"].
-	type _ 'These'.
-	brevityState = #briefHex ifTrue: [type _ 'Abbreviated'].
-	brevityState = #fullHex ifTrue: [type _ 'Hexadecimal'].
-	brevityState = #FileList ifTrue: [type _ 'Directory'].
-	self inform: ('{1} contents cannot
-meaningfully be saved at present.' format:{type}).
-	^ false  "failed"
-! !
-
-!RopeFileList methodsFor: 'private' stamp: 'KenD 4/24/2016 16:30'!
-readContentsBrief: ignoredBrevityFlag
-	"Read the contents of the receiver's selected file.
-	  Don't create a file here.  Check if exists."
-	| fileEntry |
-
-	fileEntry := self fullName asFileEntry.
-
-	fileEntry exists 
-		ifFalse: [ ^ 'For some reason, this file cannot be read' ].
-	
-	brevityState := #fullFile.
-	
-	^ acceptedContentsCache := (fileEntry contents asRope) asText
-	! !
-
-!RopeWrapper methodsFor: 'conversion' stamp: 'KenD 3/6/2013 17:18'!
-asRope
-
-	^ theRope! !
-
-!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/6/2013 17:11'!
-doesNotUnderstand: aMessage
-	"Delegate operations to theRope and Answer the result.
-	Ir a result is a new rope, remember that as theRope"
-
-	| result |
-	result := aMessage sendTo: theRope.
-	(result isKindOf: Rope)
-	ifTrue: [ theRope := result ].
-	
-	^ result! !
-
-!RopeWrapper methodsFor: 'initialize-release' stamp: 'KenD 3/6/2013 17:17'!
-initialize
-
-	"default"
-	theRope := Rope emptyString.! !
-
-!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/14/2013 19:43'!
-printString
-
-	^theRope printString! !
-
-!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/14/2013 20:23'!
-replaceFrom: start to: stop with: replacement startingAt: repStart 
-		"Answer a new rope with the replacement.
-		Nota Bene: The String method with this name is destructive!!"
-		| repRope |
-		repRope := replacement asRope.
-
-	theRope := theRope copyReplaceFrom: start to: stop with: (repRope copyFrom: repStart to: (repRope size)).
-	
-	^theRope! !
-
-!RopeWrapper methodsFor: 'initialize-release' stamp: 'KenD 3/6/2013 17:14'!
-with: aRope
-	"Initialize theRope"
-
-	theRope := aRope! !
-
-!RopeWrapper class methodsFor: 'instance creation' stamp: 'KenD 3/6/2013 17:13'!
-with: aThing
-
-	^ self basicNew with:( aThing asRope)! !
-
 !RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 4/24/2016 15:35'!
 save
 	"Save command"
@@ -4715,6 +4700,56 @@ testindexOfstartingAt
 
 	self assert: ('aa aa éé aa aa' asRope indexOf: $a startingAt: 8) = 12.
 	self assert: ('aa aa éé aa aa' asRope indexOf: $z startingAt: 8) = 0.! !
+
+!RopeWrapper methodsFor: 'conversion' stamp: 'KenD 3/6/2013 17:18'!
+asRope
+
+	^ theRope! !
+
+!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/6/2013 17:11'!
+doesNotUnderstand: aMessage
+	"Delegate operations to theRope and Answer the result.
+	Ir a result is a new rope, remember that as theRope"
+
+	| result |
+	result := aMessage sendTo: theRope.
+	(result isKindOf: Rope)
+	ifTrue: [ theRope := result ].
+	
+	^ result! !
+
+!RopeWrapper methodsFor: 'initialize-release' stamp: 'KenD 3/6/2013 17:17'!
+initialize
+
+	"default"
+	theRope := Rope emptyString.! !
+
+!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/14/2013 19:43'!
+printString
+
+	^theRope printString! !
+
+!RopeWrapper methodsFor: 'delegation' stamp: 'KenD 3/14/2013 20:23'!
+replaceFrom: start to: stop with: replacement startingAt: repStart 
+		"Answer a new rope with the replacement.
+		Nota Bene: The String method with this name is destructive!!"
+		| repRope |
+		repRope := replacement asRope.
+
+	theRope := theRope copyReplaceFrom: start to: stop with: (repRope copyFrom: repStart to: (repRope size)).
+	
+	^theRope! !
+
+!RopeWrapper methodsFor: 'initialize-release' stamp: 'KenD 3/6/2013 17:14'!
+with: aRope
+	"Initialize theRope"
+
+	theRope := aRope! !
+
+!RopeWrapper class methodsFor: 'instance creation' stamp: 'KenD 3/6/2013 17:13'!
+with: aThing
+
+	^ self basicNew with:( aThing asRope)! !
 Rope initialize!
 ConcatRope initialize!
 LazyFileRope initialize!
