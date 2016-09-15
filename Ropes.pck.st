@@ -1,9 +1,9 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2935] on 11 September 2016 at 4:18:28 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2936] on 15 September 2016 at 2:22:45 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 20!
+!provides: 'Ropes' 1 21!
 !requires: 'Compression' 1 nil nil!
-!requires: 'Goodies' 1 4 nil!
 !requires: 'Cuis-Base' 42 2935 nil!
+!requires: 'Goodies' 1 4 nil!
 !classDefinition: #RopeTextModel category: #Ropes!
 TextModel subclass: #RopeTextModel
 	instanceVariableNames: 'fileName timeStamp'
@@ -378,6 +378,11 @@ initialize
 	timeStamp := 0.
 	self flushUndoRedoCommands! !
 
+!RopeTextModel methodsFor: 'accessing' stamp: 'KenD 9/15/2016 14:05:02'!
+labelString
+
+	^ 'Text Edit(''', self fileName, ''')'! !
+
 !RopeTextModel methodsFor: 'initialize-release' stamp: 'KenD 4/23/2013 20:11'!
 openLabel: aString 
 	"Create a standard system view of the model, me, and open it."
@@ -478,7 +483,7 @@ saveToNewFileNotifying: aTextModelMorph
 		^true
 	]! !
 
-!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 4/24/2016 15:56'!
+!RopeTextModel methodsFor: 'file handeling' stamp: 'KenD 9/15/2016 14:20:07'!
 saveToOldFileNotifying: aTextModelMorph
 	"Answer true if OK, else nil"
 
@@ -492,8 +497,8 @@ elsewhere since you started
 editing them here.  Accept anyway?' ) 
 		ifFalse: [ aTextModelMorph flash. ^nil ]
 	].
-				
-	dirEntry fileContents: (self actualContents asString).
+	"Note: Text asString -> inner string; then #asString converts Rope to String"
+	dirEntry fileContents: (self actualContents asString asString).
 	timeStamp := fileName asFileEntry modificationTime.
 	"@@@FIXME Notify aTextModelMorph"
 	^true
@@ -3786,7 +3791,7 @@ save: aKeyboardEvent
 	self acceptContents.
 	^ true! !
 
-!RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 4/24/2016 15:34'!
+!RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 9/15/2016 14:08:02'!
 saveAs
 	"SaveAs command"
 	| fileName |
@@ -3798,7 +3803,7 @@ saveAs
 	model saveAs: fileName.	
 	morph hasUnacceptedEdits: false.
 	morph owningWindow
-		setLabel: model fileName;
+		setLabel: model labelString;
 		invalidateTitleArea.
 	
 	^true! !
@@ -3883,7 +3888,7 @@ initializeMenu
 		{'Set Alignment...'.				#chooseAlignment}.
 	}! !
 
-!RopeTextEditor class methodsFor: 'instance creation' stamp: 'KenD 4/24/2016 18:04'!
+!RopeTextEditor class methodsFor: 'instance creation' stamp: 'KenD 9/15/2016 14:12:24'!
 openFromFileEntry: fileEntry
 
 	| model fileName  |
@@ -3891,7 +3896,7 @@ openFromFileEntry: fileEntry
 	model := RopeTextModel fromFile: fileName.
 	SystemWindow 
 		editText: model
-			label: 'Text Editor (''',  fileEntry name ,  ''')'
+			label: 'Text Edit(''',  fileEntry name ,  ''')'
 			wrap: true.! !
 
 !RopeTextEditor class methodsFor: 'instance creation' stamp: 'KenD 4/24/2016 18:35'!
