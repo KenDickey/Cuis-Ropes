@@ -1,9 +1,9 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2936] on 15 September 2016 at 2:22:45 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2942] on 19 September 2016 at 2:59:08 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 21!
-!requires: 'Compression' 1 nil nil!
-!requires: 'Cuis-Base' 42 2935 nil!
+!provides: 'Ropes' 1 24!
 !requires: 'Goodies' 1 4 nil!
+!requires: 'Cuis-Base' 42 2942 nil!
+!requires: 'Compression' 1 nil nil!
 !classDefinition: #RopeTextModel category: #Ropes!
 TextModel subclass: #RopeTextModel
 	instanceVariableNames: 'fileName timeStamp'
@@ -305,6 +305,12 @@ asTextRope
 	"Answer a Text with my string as a Rope. Keep runs as well"
 
 	^ Text string: (self string asRope) runs:(self runs copy)! !
+
+!UniString methodsFor: '*ropes' stamp: 'KenD 9/19/2016 14:58:58'!
+appendToRope: aRope
+
+	"Convert from Unicode to ordinary String"
+	^ ConcatRope concatenate: aRope with: self asString asRope! !
 
 !FileListWindow class methodsFor: '*ropes' stamp: 'KenD 5/31/2016 16:32'!
 openRopeFileList
@@ -972,7 +978,7 @@ asUtf8
 
 	^self asUtf8: false! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:31'!
+!Rope methodsFor: 'converting' stamp: 'KenD 9/19/2016 12:36:25'!
 asUtf8: convertEmbeddedNCRs
 	"Convert the given string to UTF-8 from the internal encoding: ISO Latin 9 (ISO 8859-15)
 	Answer a ByteArray.
@@ -1036,7 +1042,7 @@ Copy the following and paste in your external text editor
 							withUtf8BytesOfUnicodeCodePoint: codePoint.
 						inStream position: prevPos + ncrSize ]]
 				ifFalse: [
-					codePoint _ nextChar unicodeCodePoint.
+					codePoint _ nextChar codePoint.
 					Character
 						evaluate: [ :byte | outStream nextPut: byte ]
 						withUtf8BytesOfUnicodeCodePoint: codePoint ]]]! !
@@ -1051,22 +1057,14 @@ at: index put: aCharacter
 
 	self subclassResponsibility ! !
 
-!Rope methodsFor: 'converting' stamp: 'KenD 3/5/2013 21:38'!
+!Rope methodsFor: 'converting' stamp: 'jmv 9/19/2016 09:33:04'!
 base64Decoded
 	"Decode the receiver from base 64"
-	"'SGVsbG8gV29ybGQ=' base64Decoded"
-	^(Base64MimeConverter mimeDecode: self as: String) asRope! !
-
-!Rope methodsFor: 'converting' stamp: 'KenD 2/22/2013 21:32'!
-base64Encoded
-	"Encode the receiver as base64"
-"
-	'Hello World' base64Encoded
-"
-
-	^(Base64MimeConverter
-		mimeEncode: (ReadStream on: self)
-		multiLine: false) contents asRope! !
+	"
+	'SGVsbG8gV29ybGQ=' base64Decoded
+	'SGVsbG8gV29ybGQ=' base64Decoded asString
+	"
+	^(Base64MimeConverter mimeDecode: self) asRope! !
 
 !Rope methodsFor: 'comparing' stamp: 'KenD 2/22/2013 08:40'!
 beginsWith: prefix
@@ -3774,6 +3772,16 @@ string: aString startIndex: anIndex length: numberOfChars
 	
 	^ self new string: aString startIndex: anIndex length: numberOfChars! !
 
+!RopeTextEditor methodsFor: 'accessing' stamp: 'KenD 9/19/2016 12:20:11'!
+icon
+
+	^ Theme textEditorIcon! !
+
+!RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 9/19/2016 14:45:45'!
+replaceSelectionWith: aTextOrString
+
+	super replaceSelectionWith: aTextOrString asString asString! !
+
 !RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 4/24/2016 15:35'!
 save
 	"Save command"
@@ -4151,15 +4159,13 @@ testAsLegalSelector
        self assert: ( '234znak 43 ) 2' asRope asLegalSelector  = 'v234znak432').
  ! !
 
-!RopeTest methodsFor: 'test - converting' stamp: 'hjh 2/26/2013 09:41'!
+!RopeTest methodsFor: 'test - converting' stamp: 'jmv 9/19/2016 09:49:42'!
 testBase64
 "copied from Cuis 4.1 class StringTest"
 "self new testBase64"
 
 	self 
-		assert: 'SGVsbG8gV29ybGQ=' asRope base64Decoded = 'Hello World' asRope;
-		assert: 'Hello World' asRope base64Encoded = 'SGVsbG8gV29ybGQ=' asRope;
-		assert: (String new: 100 withAll: $x) asRope base64Encoded  = 'eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eA==' asRope! !
+		assert: 'SGVsbG8gV29ybGQ=' asRope base64Decoded = 'Hello World' asByteArray! !
 
 !RopeTest methodsFor: 'test - converting' stamp: 'KenD 2/23/2013 18:26'!
 testCapitalized
