@@ -1,6 +1,6 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2942] on 19 September 2016 at 2:59:08 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2943] on 21 September 2016 at 1:13:44 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 24!
+!provides: 'Ropes' 1 26!
 !requires: 'Goodies' 1 4 nil!
 !requires: 'Cuis-Base' 42 2942 nil!
 !requires: 'Compression' 1 nil nil!
@@ -305,12 +305,6 @@ asTextRope
 	"Answer a Text with my string as a Rope. Keep runs as well"
 
 	^ Text string: (self string asRope) runs:(self runs copy)! !
-
-!UniString methodsFor: '*ropes' stamp: 'KenD 9/19/2016 14:58:58'!
-appendToRope: aRope
-
-	"Convert from Unicode to ordinary String"
-	^ ConcatRope concatenate: aRope with: self asString asRope! !
 
 !FileListWindow class methodsFor: '*ropes' stamp: 'KenD 5/31/2016 16:32'!
 openRopeFileList
@@ -3668,19 +3662,19 @@ at: anIndex
 
 	^self string at: (anIndex + startIndex - 1)! !
 
-!SubRope methodsFor: 'accessing' stamp: 'KenD 2/10/2013 19:31'!
+!SubRope methodsFor: 'accessing' stamp: 'KenD 9/21/2016 13:11:32'!
 at: index put: aCharacter 
-
+ 
 	"Answer a new rope"
-	| offsetIndex startIndex endIndex |
+	| offset  start  end  |
 	
-	startIndex := self startIndex.
-	endIndex := startIndex + self size - 1.
-	offsetIndex := index +  startIndex - 1.
+	start    := self startIndex.
+	end     := start  + self size - 1.
+	offset  := index +  start  - 1.
 	
 	(self size = 1)
 	ifTrue:  [
-		(offsetIndex = 1)
+		(offset  = 1)
 		ifTrue: [^ aCharacter asRope]
 		ifFalse: [self errorSubscriptBounds: index]
 	].
@@ -3688,7 +3682,7 @@ at: index put: aCharacter
 	(index = 1)
 	ifTrue: [ ^ aCharacter asRope , (self copyFrom: 2 to: self size)].
 	
-	(offsetIndex = endIndex)
+	(offset  = end )
 	ifTrue: [ ^ (self copyFrom: 1 to: (index - 1)) , aCharacter asRope ].
 	
 	^ (self copyFrom: 1 to: (index - 1)) ,
