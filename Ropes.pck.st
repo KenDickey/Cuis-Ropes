@@ -1,9 +1,9 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2943] on 21 September 2016 at 1:13:44 pm'!
+'From Cuis 5.0 of 7 November 2016 [latest update: #2974] on 16 November 2016 at 2:47:22 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 26!
+!provides: 'Ropes' 1 27!
+!requires: 'Compression' 1 nil nil!
 !requires: 'Goodies' 1 4 nil!
 !requires: 'Cuis-Base' 42 2942 nil!
-!requires: 'Compression' 1 nil nil!
 !classDefinition: #RopeTextModel category: #Ropes!
 TextModel subclass: #RopeTextModel
 	instanceVariableNames: 'fileName timeStamp'
@@ -3771,10 +3771,10 @@ icon
 
 	^ Theme textEditorIcon! !
 
-!RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 9/19/2016 14:45:45'!
+!RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 11/16/2016 14:46:22'!
 replaceSelectionWith: aTextOrString
 
-	super replaceSelectionWith: aTextOrString asString asString! !
+	super replaceSelectionWith: aTextOrString asTextRope! !
 
 !RopeTextEditor methodsFor: 'editing keys' stamp: 'KenD 4/24/2016 15:35'!
 save
