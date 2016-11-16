@@ -1,6 +1,6 @@
-'From Cuis 5.0 of 7 November 2016 [latest update: #2974] on 16 November 2016 at 2:47:22 pm'!
+'From Cuis 5.0 of 7 November 2016 [latest update: #2974] on 16 November 2016 at 2:53:55 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 27!
+!provides: 'Ropes' 1 28!
 !requires: 'Compression' 1 nil nil!
 !requires: 'Goodies' 1 4 nil!
 !requires: 'Cuis-Base' 42 2942 nil!
@@ -234,6 +234,11 @@ appendToRope: aRope
 asRope
 
 	^FlatRope fromString: self! !
+
+!String methodsFor: '*ropes' stamp: 'KenD 11/16/2016 14:53:01'!
+asTextRope
+
+	^ self asRope asText! !
 
 !String class methodsFor: '*ropes' stamp: 'KenD 2/21/2013 20:09'!
 caseInsensitiveOrder
