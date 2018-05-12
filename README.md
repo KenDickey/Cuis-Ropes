@@ -3,7 +3,7 @@ Cuis-Ropes
 
 ### Immutable (a.k.a. functional) strings for Cuis
 
-Tested in Cuis 4.2 rev 2972
+Tested in Cuis 4.2 rev 3319
 
 Ropes are a high-level representation of text that offers much better performance than strings for common operations, and generally reduce memory allocations and copies, while only entailing a small degradation of less common operations.
 
