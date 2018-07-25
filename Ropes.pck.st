@@ -1,9 +1,9 @@
-'From Cuis 5.0 of 7 November 2016 [latest update: #3319] on 12 May 2018 at 10:26:47 pm'!
+'From Cuis 5.0 of 7 November 2016 [latest update: #3374] on 25 July 2018 at 2:04:39 pm'!
 'Description Ropes: functional, immutable strings'!
-!provides: 'Ropes' 1 29!
+!provides: 'Ropes' 1 30!
 !requires: 'Cuis-Base' 42 2942 nil!
-!requires: 'Compression' 1 nil nil!
 !requires: 'Goodies' 1 4 nil!
+!requires: 'Compression' 1 nil nil!
 SystemOrganization addCategory: #Ropes!
 
 
@@ -3829,28 +3829,17 @@ initialize
 	self initializeMenu.
 	FileList registerFileReader: self.! !
 
-!RopeTextEditor class methodsFor: 'menu-world' stamp: 'KenD 4/24/2016 18:36'!
+!RopeTextEditor class methodsFor: 'menu-world' stamp: 'KenD 7/25/2018 14:01:29'!
 worldMenuForOpenGroup
-	^ Dictionary new
-		
-			at: #itemGroup
-			put: 10;
-		
-			at: #itemOrder
-			put: 10;
-		
-			at: #label
-			put: 'Basic Text Editor';
-		
-			at: #object
-			put: self;
-		
-			at: #selector
-			put: #openTextEditor;
-		
-			at: #balloonText
-			put: 'A window for composing text';
-		yourself.! !
+	^ `{{
+			#itemGroup 	-> 		10.
+			#itemOrder 	-> 		10.
+			#label 			->		'Basic Text Editor'.
+			#object 			-> 		RopeTextEditor .
+			#selector 		-> 		#openTextEditor.
+			#icon 			-> 	     #textEditorIcon .
+			#balloonText 	-> 		'A window for composing text'.
+		} asDictionary}`! !
 
 !RopePerformanceTest methodsFor: 'performance' stamp: 'KenD 2/22/2013 19:43'!
 testConcatTime
